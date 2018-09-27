@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>955</width>
+    <height>691</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout_15">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_12">
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="tab">
+           <attribute name="title">
+            <string>Список</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_14">
+            <item>
+             <widget class="QTableView" name="tableView">
+              <property name="minimumSize">
+               <size>
+                <width>909</width>
+                <height>352</height>
+               </size>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+              <property name="lineWidth">
+               <number>0</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_2">
+           <attribute name="title">
+            <string>Аудио</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_13">
+            <item>
+             <widget class="QTableView" name="playlistView">
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QProgressBar" name="progressBar">
+          <property name="value">
+           <number>24</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_14">
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_11">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_6">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_3">
+                <item>
+                 <widget class="QRadioButton" name="radioButton">
+                  <property name="text">
+                   <string>Входящие</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_2">
+                  <property name="text">
+                   <string>Исходящие</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_3">
+                  <property name="text">
+                   <string>None</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_4">
+                <property name="title">
+                 <string>Поиск:</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_5">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_8">
+                   <item>
+                    <layout class="QVBoxLayout" name="verticalLayout_3">
+                     <item>
+                      <widget class="QLineEdit" name="lineEdit">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="minimumSize">
+                        <size>
+                         <width>139</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox">
+                       <property name="minimumSize">
+                        <size>
+                         <width>139</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QComboBox" name="comboBox_2">
+                       <property name="minimumSize">
+                        <size>
+                         <width>139</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="findPar2">
+                       <property name="minimumSize">
+                        <size>
+                         <width>139</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item>
+                    <layout class="QVBoxLayout" name="verticalLayout_4">
+                     <item>
+                      <widget class="QCheckBox" name="checkBox">
+                       <property name="text">
+                        <string>Фильтр</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="findOk">
+                       <property name="minimumSize">
+                        <size>
+                         <width>59</width>
+                         <height>23</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>ОК</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout">
+              <item>
+               <widget class="QPushButton" name="pushButton">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>88</width>
+                  <height>23</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Открыть БД</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_3">
+                <property name="minimumSize">
+                 <size>
+                  <width>88</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Миграция из Meizu</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btn_paint">
+                <property name="minimumSize">
+                 <size>
+                  <width>88</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Раскрасить</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_2">
+                <property name="minimumSize">
+                 <size>
+                  <width>88</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Из таблицы в БД record</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_13">
+            <item>
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Путь к воспроизводимому файлу</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QLineEdit" name="lineEdit_2"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_5">
+                <property name="text">
+                 <string>OK</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_10">
+          <item>
+           <widget class="QGroupBox" name="groupBox_3">
+            <property name="minimumSize">
+             <size>
+              <width>369</width>
+              <height>141</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>Воспроизведение</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_9">
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_8">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_12">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_11">
+                   <item>
+                    <widget class="QToolButton" name="btn_previous">
+                     <property name="text">
+                      <string>previous</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="buttons.qrc">
+                       <normaloff>:/buttons/skip-previous.png</normaloff>:/buttons/skip-previous.png</iconset>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QToolButton" name="btn_add">
+                     <property name="text">
+                      <string>add</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="buttons.qrc">
+                       <normaloff>:/buttons/plus.png</normaloff>:/buttons/plus.png</iconset>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QToolButton" name="btn_play">
+                     <property name="text">
+                      <string>play</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="buttons.qrc">
+                       <normaloff>:/buttons/play.png</normaloff>:/buttons/play.png</iconset>
+                     </property>
+                     <property name="popupMode">
+                      <enum>QToolButton::DelayedPopup</enum>
+                     </property>
+                     <property name="autoRaise">
+                      <bool>false</bool>
+                     </property>
+                     <property name="arrowType">
+                      <enum>Qt::RightArrow</enum>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QToolButton" name="btn_pause">
+                     <property name="text">
+                      <string>pause</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="buttons.qrc">
+                       <normaloff>:/buttons/pause.png</normaloff>:/buttons/pause.png</iconset>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QToolButton" name="btn_stop">
+                     <property name="text">
+                      <string>stop</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="buttons.qrc">
+                       <normaloff>:/buttons/stop.png</normaloff>:/buttons/stop.png</iconset>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QToolButton" name="btn_next">
+                     <property name="text">
+                      <string>next</string>
+                     </property>
+                     <property name="icon">
+                      <iconset resource="buttons.qrc">
+                       <normaloff>:/buttons/skip-next.png</normaloff>:/buttons/skip-next.png</iconset>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <widget class="QGroupBox" name="groupBox">
+                   <property name="title">
+                    <string/>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_10">
+                    <item>
+                     <layout class="QHBoxLayout" name="horizontalLayout_2">
+                      <item>
+                       <widget class="QLabel" name="label_2">
+                        <property name="text">
+                         <string>Громкость</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QSlider" name="horizontalSlider">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QLabel" name="volumLabel">
+                        <property name="text">
+                         <string>0</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_7">
+                 <item>
+                  <widget class="QGroupBox" name="groupBox_2">
+                   <property name="title">
+                    <string/>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout">
+                    <item>
+                     <widget class="QLabel" name="musicLabStart">
+                      <property name="text">
+                       <string>000</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QSlider" name="horizontalSlider_2">
+                      <property name="minimumSize">
+                       <size>
+                        <width>283</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="invertedAppearance">
+                       <bool>false</bool>
+                      </property>
+                      <property name="invertedControls">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="musicLabEnd">
+                      <property name="text">
+                       <string>000</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="currentTrack">
+                   <property name="text">
+                    <string>TextLabel</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>955</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuSMs">
+    <property name="title">
+     <string>Меню</string>
+    </property>
+    <addaction name="actionSMs"/>
+   </widget>
+   <addaction name="menuSMs"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionSMs">
+   <property name="text">
+    <string>SMs</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="buttons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

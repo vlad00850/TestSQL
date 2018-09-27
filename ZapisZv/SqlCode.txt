@@ -1,0 +1,65 @@
+CREATE TABLE record ("id" integer primary key UNIQUE,
+"nameFile" text,
+"namePeople" text,
+"number" text,
+"dateTimeRec" text,
+"numberModif" text,
+"fileSize" integer,
+"fileLenght" integer,
+"callType" integer,
+"comment" text,
+"priority" integer,
+"modified" integer,
+"created" integer,
+"sim" text,
+"record_uuid" integer
+);
+
+
+CREATE TABLE contacts ("id" integer primary key UNIQUE,
+"namePeople" text,
+"number1" text,
+"number2" text,
+"number3" text,
+"number4" text,
+"number5" text,
+"comment" text
+);
+
+CREATE TABLE sms ("id" integer primary key,
+"address" text,
+"date" text,
+"date_sent" text,
+"type" integer,
+"body" text,
+"imsi" text,
+"thread_id" integer,
+"association_id" text
+);
+
+SELECT id, address, date ,date_sent ,type , body, imsi,thread_id , association_id FROM sms
+
+CREATE TABLE sms ("id" integer primary key,   //c ключом FOREIGN KEY (idcon)
+"idcon" INTEGER NOT NULL,
+"address" text,
+"date" text,
+"date_sent" text,
+"type" integer,
+"body" text,
+"imsi" text,
+"thread_id" integer,
+"association_id" text,
+FOREIGN KEY (idcon) REFERENCES contacts(id)
+);
+
+SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid Priority FROM recorder
+
+SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, 
+modified, created, sim, record_uuid FROM record WHERE nameFile LIKE "C71104-195047.mp3" and dateTimeRec=1509814233577
+
+delete from record / where
+
+select normalized_number, date, duration, type, name, record_uuid from calls
+
+select name, size, length, created, modified, callrecordimsi from recorder   / callrecordid
+       имя файла                                симка
