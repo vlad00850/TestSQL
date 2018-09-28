@@ -1,10 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
-
+#include "QWhatsThis"  //Для всплывающих подсказок
 
 QString PATH = QDir::current().absolutePath() + "/CallRecProg.db"; //путь к главной БД
-
 
 //data/data/com.android.soundrecorder/databases/recorded.db
 //data/data/com.android.providers.contacts/databases/contacts2.db
@@ -12,6 +10,18 @@ QString PATH = QDir::current().absolutePath() + "/CallRecProg.db"; //путь к
 //Все аудиозаписи которые не нашли контакт записать в таблицу
 
 //Раскрашивание из query модели добавить
+//Группировка по контактам и людям
+
+//SqlTabMod->setSort(3,Qt::DescendingOrder);
+//SqlTabMod->sort(3,Qt::DescendingOrder);
+
+//Правой кнопкой на значение и открывается меню как в windows
+
+//Представление времени в формате mm:ss
+//            QString FileLenght = query.value(7).toString();
+//            QTime displayTime(0, (FileLenght.toInt()/60) % 60, (FileLenght.toInt()) % 60);
+//            item = new QStandardItem(QString(displayTime.toString("mm:ss")));
+//            model->setItem(i,8,item);
 
 //QString FileDir="";//папка с выбранными файлами
 QStandardItemModel *model = new QStandardItemModel;
@@ -38,6 +48,7 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
     connect(ui->btn_pause, SIGNAL(clicked()),Audio->m_player,SLOT(pause()));
     connect(ui->btn_stop, SIGNAL(clicked()),Audio->m_player,SLOT(stop()));
 
+    ui->currentTrack->setText(" ");//Трек который воспроизводится
     //**********************Звук****************************
     ui->horizontalSlider->setRange(0,100);//Задаем, что с 0 до 100 будет передвигаться ползунок
     connect(ui->horizontalSlider, SIGNAL(valueChanged(int)),Audio->m_player,SLOT(setVolume(int)));//Громкость воспроизведения и горизонтальный ползунок
@@ -104,17 +115,14 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
 
     ui->statusBar->addPermanentWidget(ui->progressBar,1); // progressBar в нижнюю строку(  statusBar)
 
-
-
-//    //*************************************************8
+//    //*************************************************
 //    //для записи в бд
 //    QSqlRecord record = SqlTabMod->record(1);
 //    QString text = record.value(1).toString();
 //    QString text2 = record.value(2).toString();
 //    qDebug() << text;
 //    qDebug() << text2;
-
-//    //*************************************************8
+//    //*************************************************
 
 }
 
@@ -215,21 +223,16 @@ void MainWindow::Zapis(int j, QSqlQuery query)
     {
         SqlTabMod->setTable("CALL_RECORDS");
         SqlTabMod->select();
-        SqlTabMod->removeColumn(2);
-        SqlTabMod->removeColumn(6);
+        SqlTabMod->removeColumn(2);//Удаление всей колонки
+        SqlTabMod->removeColumn(5);
         SqlTabMod->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
         SqlTabMod->setHeaderData(1, Qt::Horizontal, QObject::tr("Имя файла"));
         SqlTabMod->setHeaderData(2, Qt::Horizontal, QObject::tr("Размер байт"));
         SqlTabMod->setHeaderData(3, Qt::Horizontal, QObject::tr("Номер тел."));
-        SqlTabMod->setHeaderData(4, Qt::Horizontal, QObject::tr("Дата"));
-        SqlTabMod->setHeaderData(5, Qt::Horizontal, QObject::tr("Номер модифицированный."));
-        SqlTabMod->setHeaderData(6, Qt::Horizontal, QObject::tr("Продолжительность с."));
-        SqlTabMod->setHeaderData(7, Qt::Horizontal, QObject::tr("Имя контакта"));
-        SqlTabMod->setHeaderData(8, Qt::Horizontal, QObject::tr("Тип вызова"));
-        SqlTabMod->setHeaderData(9, Qt::Horizontal, QObject::tr("Комментарий"));
-        SqlTabMod->setHeaderData(10, Qt::Horizontal, QObject::tr("123"));
-        SqlTabMod->setHeaderData(11, Qt::Horizontal, QObject::tr("123"));
-        SqlTabMod->setHeaderData(12, Qt::Horizontal, QObject::tr("123"));
+        SqlTabMod->setHeaderData(4, Qt::Horizontal, QObject::tr("Имя контакта"));
+        SqlTabMod->setHeaderData(5, Qt::Horizontal, QObject::tr("Продолжительность с."));
+        SqlTabMod->setHeaderData(6, Qt::Horizontal, QObject::tr("Дата"));
+        SqlTabMod->setHeaderData(7, Qt::Horizontal, QObject::tr("Тип вызова"));
 
         //Прокрутка для tableView - SqlTabOtpusk
         while (SqlTabMod->canFetchMore())
@@ -306,11 +309,7 @@ void MainWindow::Zapis(int j, QSqlQuery query)
         ui->statusBar->showMessage(QString("Кол-во записей :%1")
                                    .arg( SqlTabMod->rowCount()), 0 );
 
-        //Представление времени в формате mm:ss
-        //            QString FileLenght = query.value(7).toString();
-        //            QTime displayTime(0, (FileLenght.toInt()/60) % 60, (FileLenght.toInt()) % 60);
-        //            item = new QStandardItem(QString(displayTime.toString("mm:ss")));
-        //            model->setItem(i,8,item);
+
     }
     else if(j==3) //contacts2.db
     {
@@ -468,15 +467,16 @@ void MainWindow::bdbd()
         {
             QString nameFile="";
             ++m_nStep;
+
             if(m_nStep%50==0)
                 emit signProgresBar(m_nStep);
 
             CallRecquery.prepare("SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE nameFile LIKE :nameFile");
-            nameFile=SqlTabMod->data(SqlTabMod->index(i,2)).toString();//nameFile записывается в эту переменную из модели
+            nameFile=SqlTabMod->data(SqlTabMod->index(i,1)).toString();//nameFile записывается в эту переменную из модели
             //            if(nameFile==NULL)
             //                continue;
             qDebug() << nameFile;
-            CallRecquery.bindValue(":nameFile", nameFile);// поиск переменной в базе данных RecordDB
+            CallRecquery.bindValue(":nameFile", nameFile);// поиск переменной в базе данных record
             CallRecquery.exec();
             CallRecquery.first();
 
@@ -486,13 +486,19 @@ void MainWindow::bdbd()
                 CallRecquery.prepare("insert into record(id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid)"
                                      "values(:id, :nameFile, :namePeople, :number, :dateTimeRec, :numberModif, :fileSize, :fileLenght, :callType, :comment, :priority, :modified, :created, :sim, :record_uuid)");
                 CallRecquery.bindValue(":id", CallRecID);
-                CallRecquery.bindValue(":nameFile", SqlTabMod->data(SqlTabMod->index(i,2)).toString());
-                CallRecquery.bindValue(":namePeople", SqlTabMod->data(SqlTabMod->index(i,3)).toString());
-                CallRecquery.bindValue(":number", SqlTabMod->data(SqlTabMod->index(i,4)).toString());
-                CallRecquery.bindValue(":dateTimeRec", SqlTabMod->data(SqlTabMod->index(i,5)).toString());
+                CallRecquery.bindValue(":nameFile", SqlTabMod->data(SqlTabMod->index(i,1)).toString());
+                CallRecquery.bindValue(":namePeople", SqlTabMod->data(SqlTabMod->index(i,4)).toString());
+                CallRecquery.bindValue(":number", SqlTabMod->data(SqlTabMod->index(i,3)).toString());
+
+                //******************Приведение даты к unix формату
+                QDateTime dt;
+                dt = dt.fromString(SqlTabMod->data(SqlTabMod->index(i,6)).toString(),"yyyy-MM-dd HH:mm:ss");
+                uint unix=dt.toTime_t(); //в UNIX формат
+                CallRecquery.bindValue(":dateTimeRec", QString::number(unix));
+                //******************
 
                 //проверка записи телефона
-                numb=SqlTabMod->data(SqlTabMod->index(i,4)).toString();
+                numb=SqlTabMod->data(SqlTabMod->index(i,3)).toString();
                 if((numb.count()>10))
                     if( !((numb[0]=='+') && (numb[1]=='8')))
                         if((numb[0]=='+') && (numb[1]=='7'))
@@ -502,15 +508,15 @@ void MainWindow::bdbd()
                                 numb.remove(0,1);
                 CallRecquery.bindValue(":numberModif", numb);
 
-                CallRecquery.bindValue(":fileSize", SqlTabMod->data(SqlTabMod->index(i,7)).toInt());
-                CallRecquery.bindValue(":fileLenght", SqlTabMod->data(SqlTabMod->index(i,8)).toInt());
-                CallRecquery.bindValue(":callType", SqlTabMod->data(SqlTabMod->index(i,9)).toInt());
-                CallRecquery.bindValue(":comment", SqlTabMod->data(SqlTabMod->index(i,10)).toString());
-                CallRecquery.bindValue(":priority", SqlTabMod->data(SqlTabMod->index(i,11)).toInt());
-                CallRecquery.bindValue(":sim", SqlTabMod->data(SqlTabMod->index(i,14)).toString());
-                CallRecquery.bindValue(":modified",SqlTabMod->data(SqlTabMod->index(i,13)).toInt());
-                CallRecquery.bindValue(":created", SqlTabMod->data(SqlTabMod->index(i,12)).toInt());
-                CallRecquery.bindValue(":record_uuid", SqlTabMod->data(SqlTabMod->index(i,15)).toLongLong());
+                CallRecquery.bindValue(":fileSize", SqlTabMod->data(SqlTabMod->index(i,2)).toInt());
+                CallRecquery.bindValue(":fileLenght", SqlTabMod->data(SqlTabMod->index(i,5)).toInt());
+                CallRecquery.bindValue(":callType", SqlTabMod->data(SqlTabMod->index(i,7)).toInt());
+//                CallRecquery.bindValue(":comment", "0");
+//                CallRecquery.bindValue(":priority", "0");
+//                CallRecquery.bindValue(":sim", "0");
+//                CallRecquery.bindValue(":modified","0");
+//                CallRecquery.bindValue(":created", "0");
+//                CallRecquery.bindValue(":record_uuid", "0");
                 CallRecquery.exec();
             }
         }
@@ -578,7 +584,7 @@ void MainWindow::bdbd()
     // ui->progressBar->setVisible(false);
 }
 
-//*********************Входящий или исходящий сортировка******************//
+//*********************Входящий или исходящий - сортировка******************//
 void MainWindow::InOutCall()
 {
     QString query;
@@ -650,6 +656,11 @@ void MainWindow::FindRecord(QString textSort)
 
         if(ui->comboBox->currentIndex()==2)
         {
+            if(ui->comboBox_2->isVisible()==false){ //Сообщение выводится один раз, когда выберем вкладку combobox = "Дата"
+            QPoint p = QCursor::pos(); //Текущее положение мышки (х,у)
+            QWhatsThis::showText(QPoint(p.x(),p.y()),"Дата должна быть в формате dd.mm.yyyy");
+            }
+
             ui->comboBox_2->setVisible(true);
             QDateTime dt;
             dt = dt.fromString(textSort,"dd.MM.yyyy");// из строчки в формат
@@ -752,6 +763,13 @@ void MainWindow::on_btn_add_clicked()
         Audio->m_playlist->addMedia(QUrl(filePath));
     }
     ui->btn_paint->setEnabled(true);
+
+    Audio->m_playListModel->setHeaderData(0, Qt::Horizontal, QObject::tr("Имя файла"));
+    Audio->m_playListModel->setHeaderData(1, Qt::Horizontal, QObject::tr("Путь"));
+    ui->playlistView->resizeRowsToContents();
+    ui->playlistView->resizeColumnsToContents();
+    ui->playlistView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
+    ui->playlistView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 }
 
 
@@ -784,11 +802,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 //Раскрашиваение элементов
+//GhtleПредусмотреть флаги для SqlWrite или SqlTabMod
 void MainWindow::payPrint() //Все аудиозаписи которые не нашли контакт записать в таблицу
 {
-    model->clear();
+    model->clear();//?
     QSqlRecord record;
     QStandardItem *item;
+
+    //Перезапись SqlTabMod в model (Заменить на model.setModel(SQLTABMod)
     if(ui->tableView->model()->rowCount()==SqlTabMod->rowCount())
     {
         for(int i = 0; i < SqlTabMod->rowCount(); i++)
@@ -802,6 +823,7 @@ void MainWindow::payPrint() //Все аудиозаписи которые не 
         }
     }
 
+    //Перезапись SqlTabMod в model (Заменить на model.setModel(SQLTABMod)
     if(ui->tableView->model()->rowCount()==SqlWrite->rowCount())
     {
         for(int i = 0; i < SqlWrite->rowCount(); i++)
@@ -815,7 +837,7 @@ void MainWindow::payPrint() //Все аудиозаписи которые не 
         }
     }
 
-    model->setHorizontalHeaderLabels(horizontalHeaderMy());
+    model->setHorizontalHeaderLabels(horizontalHeaderMy()); // Записываем заголовки
 
     int k = 0;
     // model->item(0,2)->setBackground(Qt::yellow);
@@ -823,11 +845,11 @@ void MainWindow::payPrint() //Все аудиозаписи которые не 
     {
         for(int j = 0; j < Audio->m_playListModel->rowCount(); j++)
         {
-            if(model->item(i,2)->text()==Audio->m_playListModel->item(j,0)->text())
+            if(model->item(i,1)->text()==Audio->m_playListModel->item(j,0)->text())
                 k++;
         }
-        if(k==0)//Если записи нет, то в таблице выделяем красным
-        {
+        switch (k) {
+        case 0://Если записи нет, то в таблице выделяем красным
             model->item(i,1)->setBackground(Qt::red);
             model->item(i,2)->setBackground(Qt::red);
             model->item(i,3)->setBackground(Qt::red);
@@ -836,90 +858,90 @@ void MainWindow::payPrint() //Все аудиозаписи которые не 
             model->item(i,6)->setBackground(Qt::red);
             model->item(i,7)->setBackground(Qt::red);
             model->item(i,8)->setBackground(Qt::red);
+            break;
+        case 1://Если запись есть, то в таблице выделяем зеленым
+            qDebug() <<  model->item(i,1)->text();
+            model->item(i,1)->setBackground(Qt::green);
+            model->item(i,2)->setBackground(Qt::green);
+            model->item(i,3)->setBackground(Qt::green);
+            model->item(i,4)->setBackground(Qt::green);
+            model->item(i,5)->setBackground(Qt::green);
+            model->item(i,6)->setBackground(Qt::green);
+            model->item(i,7)->setBackground(Qt::green);
+            model->item(i,8)->setBackground(Qt::green);
+            break;
+        default:
+            QMessageBox::critical(NULL, "Ошибка", "Повторяющиеся значения в базе");
+            break;
         }
-        else
-            if(k>1)
-                QMessageBox::critical(NULL, "Ошибка", "Повторяющиеся значения в базе");
-            else if (k==1)//Если запись есть, то в таблице выделяем зеленым
-            {
-                qDebug() <<  model->item(i,1)->text();
-                model->item(i,1)->setBackground(Qt::green);
-                model->item(i,2)->setBackground(Qt::green);
-                model->item(i,3)->setBackground(Qt::green);
-                model->item(i,4)->setBackground(Qt::green);
-                model->item(i,5)->setBackground(Qt::green);
-                model->item(i,6)->setBackground(Qt::green);
-                model->item(i,7)->setBackground(Qt::green);
-                model->item(i,8)->setBackground(Qt::green);
-            }
         k=0;
     }
 
     // Доработать запись аудиозаписи в базу данных, которая там не значится
-    for(int i = 0; i < Audio->m_playListModel->rowCount(); i++)
-    {
-        for(int j = 0; j < model->rowCount(); j++)
-        {
-            if(model->item(j,2)->text()==Audio->m_playListModel->item(i,0)->text())
-                k++;
-        }
-        if(k==0)
-        {
-            QString callType="1";
-            QStringList text = Audio->m_playListModel->item(i,0)->text().split('_',QString::SkipEmptyParts);
-            QString nameFile=Audio->m_playListModel->item(i,0)->text();//nameFile записывается в эту переменную из модели
-            QString NamePeople = text.at(0).mid(1,text.at(0).count()-2);
-            QString number = text.at(1).mid(1,text.at(1).count()-2);
-            QString dateTime = text.at(2).mid(1,text.at(2).count()-2) + " " + text.at(3).mid(1,text.at(3).count()-6);
-            //Приведение даты к unix формату
-            QDateTime dt;
-            dt = dt.fromString(dateTime,"dd-MM-yyyy HH-mm-ss");
-            uint unix=dt.toTime_t(); //в UNIX формат
-            dateTime = QString::number(unix);
+//    for(int i = 0; i < Audio->m_playListModel->rowCount(); i++)
+//    {
+//        for(int j = 0; j < model->rowCount(); j++)
+//        {
+//            if(model->item(j,1)->text()==Audio->m_playListModel->item(i,0)->text())
+//                k++;
+//        }
+//        if(k==0)
+//        {
+//            QString callType="1";
+//            QStringList text = Audio->m_playListModel->item(i,0)->text().split('_',QString::SkipEmptyParts);
+//            QString nameFile=Audio->m_playListModel->item(i,0)->text();//nameFile записывается в эту переменную из модели
+//            QString NamePeople = text.at(0).mid(1,text.at(0).count()-2);
+//            QString number = text.at(1).mid(1,text.at(1).count()-2);
+//            QString dateTime = text.at(2).mid(1,text.at(2).count()-2) + " " + text.at(3).mid(1,text.at(3).count()-6);
+//            //Приведение даты к unix формату
+//            QDateTime dt;
+//            dt = dt.fromString(dateTime,"dd-MM-yyyy HH-mm-ss");
+//            uint unix=dt.toTime_t(); //в UNIX формат
+//            dateTime = QString::number(unix);
 
-            //**********Поиск последнего id элемента базы CallRecProg.db****************//
-            db.setDatabaseName(PATH);   //Каталог базы данных в которую будет запись
-            db.open();
-            QSqlQuery CallRecquery(db);
-            int CallRecID=0;
-            CallRecquery.exec("SELECT id FROM record");
-            while (CallRecquery.next())
-                CallRecID=CallRecquery.value(0).toInt();
-            //*************************************************************************//
-            qDebug()<< "Последний элемент"<< CallRecID;//Вывод последненго элемента
+//            //**********Поиск последнего id элемента базы CallRecProg.db****************//
+//            db.setDatabaseName(PATH);   //Каталог базы данных в которую будет запись
+//            db.open();
+//            QSqlQuery CallRecquery(db);
+//            int CallRecID=0;
+//            CallRecquery.exec("SELECT id FROM record");
+//            while (CallRecquery.next())
+//                CallRecID=CallRecquery.value(0).toInt();
+//            //*************************************************************************//
+//            qDebug()<< "Последний элемент"<< CallRecID;//Вывод последненго элемента
 
 
-            CallRecquery.prepare("insert into record(id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType)"
-                                 "values(:id, :nameFile, :namePeople, :number, :dateTimeRec, :numberModif, :fileSize, :fileLenght, :callType)");
-            CallRecquery.bindValue(":id", CallRecID+1);
-            CallRecquery.bindValue(":nameFile",nameFile);
-            CallRecquery.bindValue(":namePeople", NamePeople);
-            CallRecquery.bindValue(":number", number);
-            CallRecquery.bindValue(":dateTimeRec", dateTime);
-            //проверка записи телефона
-            if((number.count()>10))
-                if(!((number[0]=='+') && (number[1]=='8')))
-                    if((number[0]=='+') && (number[1]=='7'))
-                        number.remove(0,2);
-                    else
-                        if((number[0]=='8') && (number.count()>10))
-                            number.remove(0,1);
-            CallRecquery.bindValue(":numberModif", number);
-            QFile file(Audio->m_playListModel->item(i,1)->text());
-            file.open(QIODevice::ReadOnly);
-            QString fileSize = QString::number(file.size());
-            QStringList text1 = Audio->m_playListModel->item(i,1)->text().split('/',QString::SkipEmptyParts);
-            if(text1.at(text1.count()-1)=="Outgoing")
-                callType = "2";
-            file.close();
+//            CallRecquery.prepare("insert into record(id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType)"
+//                                 "values(:id, :nameFile, :namePeople, :number, :dateTimeRec, :numberModif, :fileSize, :fileLenght, :callType)");
+//            CallRecquery.bindValue(":id", CallRecID+1);
+//            CallRecquery.bindValue(":nameFile",nameFile);
+//            CallRecquery.bindValue(":namePeople", NamePeople);
+//            CallRecquery.bindValue(":number", number);
+//            CallRecquery.bindValue(":dateTimeRec", dateTime);
+//            //проверка записи телефона
+//            if((number.count()>10))
+//                if(!((number[0]=='+') && (number[1]=='8')))
+//                    if((number[0]=='+') && (number[1]=='7'))
+//                        number.remove(0,2);
+//                    else
+//                        if((number[0]=='8') && (number.count()>10))
+//                            number.remove(0,1);
+//            CallRecquery.bindValue(":numberModif", number);
+//            QFile file(Audio->m_playListModel->item(i,1)->text());
+//            file.open(QIODevice::ReadOnly);
+//            QString fileSize = QString::number(file.size());
+//            QStringList text1 = Audio->m_playListModel->item(i,1)->text().split('/',QString::SkipEmptyParts);
+//            if(text1.at(text1.count()-1)=="Outgoing")
+//                callType = "2";
+//            file.close();
 
-            CallRecquery.bindValue(":fileSize", fileSize);
-            CallRecquery.bindValue(":fileLenght", "0");
-            CallRecquery.bindValue(":callType", callType);
+//            CallRecquery.bindValue(":fileSize", fileSize);
+//            CallRecquery.bindValue(":fileLenght", "0");
+//            CallRecquery.bindValue(":callType", callType);
 
-            CallRecquery.exec();
-        }
-    }
+//            CallRecquery.exec();
+//        }
+//    }
     ui->tableView->setModel(model);
     ui->tableView->resizeRowsToContents();
     ui->tableView->resizeColumnsToContents();
