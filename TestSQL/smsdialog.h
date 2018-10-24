@@ -37,13 +37,13 @@ public:
     explicit smsDialog(QSqlDatabase db, QString PATH, QWidget *parent = 0);
     ~smsDialog();
 
-    QStandardItemModel *model = new QStandardItemModel;
-    QSqlQueryModel *contact = new QSqlQueryModel;
-    QSqlQueryModel *contact2 = new QSqlQueryModel;
-    QStandardItemModel *model2 = new QStandardItemModel;
+    QStandardItemModel *model;
+    QSqlQueryModel *contact ;
+    QSqlQueryModel *contact2;
+    QStandardItemModel *model2;
     QStandardItem *item;
-    QString FileDir="";//папка с выбранными файлами
-    bool isClosed=false; // закрытие приложения
+    QString FileDir;//папка с выбранными файлами
+    bool isClosed; // закрытие приложения
 
 private:
     Ui::smsDialog *ui;

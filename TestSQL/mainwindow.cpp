@@ -1,6 +1,14 @@
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "QWhatsThis"  //Для всплывающих подсказок
+#include "QRegExp"
+//#include "QMediaMetaData"
+
+#include "taglib/fileref.h"
+#include "taglib/taglib.h"
+#include "taglib/tag.h"
+#include <QFile>
 
 QString PATH = QDir::current().absolutePath() + "/CallRecProg.db"; //путь к главной БД
 
@@ -8,6 +16,7 @@ QString PATH = QDir::current().absolutePath() + "/CallRecProg.db"; //путь к
 //data/data/com.android.providers.contacts/databases/contacts2.db
 //в самом начале выбирать базу callRecProg.db для глобального и не записывать в модель а сразу преобразовывать
 //Все аудиозаписи которые не нашли контакт записать в таблицу
+//taglib.dll положить в папку с exe!
 
 //Раскрашивание из query модели добавить
 //Группировка по контактам и людям
@@ -63,7 +72,8 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
     connect(ui->pushButton_3, SIGNAL(clicked()), SLOT(migrationMeizu()));
     connect(this, SIGNAL(signInizilizeProgBar(int)), SLOT(inizilizeProgBar(int)));
     connect(this, SIGNAL(signProgresBar(int)),ui->progressBar, SLOT(setValue(int)));
-    connect(ui->btn_paint, SIGNAL(clicked()), SLOT(payPrint()));
+    connect(ui->btn_paint, SIGNAL(clicked()), SLOT(payPrintThread()));
+    connect(this,SIGNAL(signpayPrintEnd(QStandardItemModel*,int,int)),SLOT(payPrintEnd(QStandardItemModel*,int,int)));
     connect(ui->actionSMs,SIGNAL(triggered()), SLOT(smsCreate()));
 
     ui->progressBar->setVisible(false);
@@ -105,7 +115,7 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
     connect(ui->playlistView, SIGNAL(doubleClicked(QModelIndex)),Audio,SLOT(setCurrentIndex(QModelIndex))); // Двойной клик на представление playlistView и запуск трека
     connect(Audio->m_playlist, SIGNAL(currentIndexChanged(int)),this, SLOT(currentTrackLabel(int)));//Для вывода в Label - currentTrack трека который воспроизводится
 
-    connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), SLOT(getId(QModelIndex)));
+    connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), SLOT(getId(QModelIndex)));//Воспроизведение трека по двойному щелчку TableView
     connect(ui->pushButton_2, SIGNAL(clicked()), SLOT(bdbdThread()));//Перенос из model в БД
 
     connect(this,SIGNAL(signProgresBarHidden(bool)),ui->progressBar, SLOT(setVisible(bool)));//Скрывает progressBar после переноса в БД
@@ -114,6 +124,7 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
     connect(ui->pushButton_5, SIGNAL(clicked()), this, SLOT(writeSql()));// Для запросов к БД
 
     ui->statusBar->addPermanentWidget(ui->progressBar,1); // progressBar в нижнюю строку(  statusBar)
+    connect(this, SIGNAL(signError(QString)), SLOT(slotError(QString))); //Для вывода ошибки
 
 //    //*************************************************
 //    //для записи в бд
@@ -136,7 +147,8 @@ void MainWindow::currentTrackLabel(int index)
 void MainWindow::getId(QModelIndex row)
 {
     QModelIndex result;
-    QString text = row.sibling(row.row(),2).data(Qt::DisplayRole).toString(); //Текстовая строка выбранной строки (имя файла)
+    QString text = row.sibling(row.row(),1).data(Qt::DisplayRole).toString(); //Текстовая строка выбранной строки (имя файла)
+    qDebug() << text;
     //Поиск по модели m_playListModel, где храняться файлы
     for(int i = 0; i< Audio->m_playListModel->rowCount(); i++)
     {
@@ -590,13 +602,12 @@ void MainWindow::InOutCall()
     QString query;
 
     if(ui->radioButton->isChecked())
-       query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=1";
+       query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=1 and callType=3";
     if(ui->radioButton_2->isChecked())
-        query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=2";
+        query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=2 and callType=3";
     if(ui->radioButton_3->isChecked())//Исходное состояние
         query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record";
 
-  //  SqlWrite->
     //Вывод
     SqlWrite->setQuery(query);
 
@@ -656,10 +667,8 @@ void MainWindow::FindRecord(QString textSort)
 
         if(ui->comboBox->currentIndex()==2)
         {
-            if(ui->comboBox_2->isVisible()==false){ //Сообщение выводится один раз, когда выберем вкладку combobox = "Дата"
-            QPoint p = QCursor::pos(); //Текущее положение мышки (х,у)
-            QWhatsThis::showText(QPoint(p.x(),p.y()),"Дата должна быть в формате dd.mm.yyyy");
-            }
+            if(ui->comboBox_2->isVisible()==false) //Сообщение выводится один раз, когда выберем вкладку combobox = "Дата"
+                emit signError("Дата должна быть в формате dd.mm.yyyy");
 
             ui->comboBox_2->setVisible(true);
             QDateTime dt;
@@ -751,21 +760,73 @@ QStringList MainWindow::FileFinder(const QDir& dir)
 //**********Выбор папки***********//
 void MainWindow::on_btn_add_clicked()
 {
+    QRegExp reg("C[0-9]{5}\-[0-9]{6}\.mp3"); // Для meizu
+    QRegExp reg2("\\[\\+?\\S+");//для CallRecorder
+
     //добавить чтение файлов из зашифрованого архива
     //QString files1 = QFileDialog::getOpenFileName(this, "Open files", QString(), "Audio Files (*.amr)"); //выбор файлов из папки
     QString files1 = QFileDialog::getExistingDirectory(this, "Open files", QString()); //выбираем папку с файлами
     foreach (QString filePath, FileFinder(QDir(files1)))
     {
         QList<QStandardItem *> items;
+        if((QString(QDir(filePath).dirName()).indexOf(reg)==-1)&&
+                (QString(QDir(filePath).dirName()).indexOf(reg2)==-1))//Проверка на соответствие шаблону Пример: C80117-215142.mp3 или [+78412684779]_[+78412684779]_[28-11-2016]_[15-38-25].amr
+            continue;
+
         items.append(new QStandardItem(QDir(filePath).dirName()));//имя файла
         items.append(new QStandardItem(filePath));//путь к файлу
-        Audio->m_playListModel->appendRow(items);
-        Audio->m_playlist->addMedia(QUrl(filePath));
+
+        if((QString(QDir(filePath).dirName()).indexOf(reg)!=-1))
+        {
+            TagLib::FileRef f(QFile::encodeName(filePath).constData());
+            if (!f.isNull() && f.tag() != NULL)
+            {
+                QFile s(filePath);
+                QStringList List = QString("%1").arg(f.tag()->title().toCString()).split('_',QString::SkipEmptyParts);
+                //******************Приведение даты к unix формату
+                QDateTime dt;
+                dt = dt.fromString(QString("201"+QString(QDir(filePath).dirName()).mid(1,5)+ QString(QDir(filePath).dirName()).mid(7,6)),"yyyyMMddHHmmss");
+                uint unix=dt.toTime_t(); //в UNIX формат
+                items.append(new QStandardItem(QString::number(unix)));//Дата
+                //******************
+
+                items.append(new QStandardItem(List[0]));//Номер телефон
+                items.append(new QStandardItem(List[0]));//Имя контакта
+                items.append(new QStandardItem(QString("%1").arg(f.audioProperties()->lengthInSeconds())));//Продолжительность
+                items.append(new QStandardItem(QString::number(s.size()/1024)));//"Размер в КБ
+            }
+            Audio->m_playListModel->appendRow(items);
+            Audio->m_playlist->addMedia(QUrl(filePath));
+        }
+       if((QString(QDir(filePath).dirName()).indexOf(reg2)!=-1))
+       {
+                Audio->m_playlist->addMedia(QUrl(filePath));
+                QFile g2(filePath);
+                QStringList List = QString(QDir(filePath).dirName()).split('_',QString::SkipEmptyParts);
+                //******************Приведение даты к unix формату
+                QDateTime dt;
+                dt = dt.fromString(QString(List[2] + List[3].remove(10,4)),"[dd-MM-yyyy][HH-mm-ss]");
+                uint unix=dt.toTime_t(); //в UNIX формат
+                items.append(new QStandardItem(QString::number(unix)));//Дата
+                //******************
+                items.append(new QStandardItem(List[1].remove(List[1].count()-1,1).remove(0,1)));//Номер телефона
+                items.append(new QStandardItem(List[0].remove(List[0].count()-1,1).remove(0,1)));//Имя контакта
+
+                items.append(new QStandardItem("777"));//Продолжительность //Невозможно получить кол-во секунд(TagLib
+                                                                           //смотрит на Сводку,а QMediaMetaData не отображает) Вариант через QMediaPlayer
+                items.append(new QStandardItem(QString::number(g2.size()/1024)));//"Размер в КБ
+                Audio->m_playListModel->appendRow(items);
+        }
     }
     ui->btn_paint->setEnabled(true);
 
     Audio->m_playListModel->setHeaderData(0, Qt::Horizontal, QObject::tr("Имя файла"));
     Audio->m_playListModel->setHeaderData(1, Qt::Horizontal, QObject::tr("Путь"));
+    Audio->m_playListModel->setHeaderData(2, Qt::Horizontal, QObject::tr("Дата"));
+    Audio->m_playListModel->setHeaderData(3, Qt::Horizontal, QObject::tr("Номер телефона"));
+    Audio->m_playListModel->setHeaderData(4, Qt::Horizontal, QObject::tr("Имя контакта"));
+    Audio->m_playListModel->setHeaderData(5, Qt::Horizontal, QObject::tr("Продолжительность"));
+    Audio->m_playListModel->setHeaderData(6, Qt::Horizontal, QObject::tr("Размер"));
     ui->playlistView->resizeRowsToContents();
     ui->playlistView->resizeColumnsToContents();
     ui->playlistView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
@@ -801,155 +862,159 @@ void MainWindow::closeEvent(QCloseEvent *event)
     Sleep(1000);
 }
 
-//Раскрашиваение элементов
-//GhtleПредусмотреть флаги для SqlWrite или SqlTabMod
-void MainWindow::payPrint() //Все аудиозаписи которые не нашли контакт записать в таблицу
+//Раскрашиваение элементов и добавление аудиозаписей которых нет в БД
+void MainWindow::payPrint(QAbstractItemModel *modelTable) //Все аудиозаписи которые не нашли контакт записать в таблицу
 {
-    model->clear();//?
-    QSqlRecord record;
+    QStandardItemModel *model2 = new QStandardItemModel();
+    model2->clear();
     QStandardItem *item;
 
-    //Перезапись SqlTabMod в model (Заменить на model.setModel(SQLTABMod)
-    if(ui->tableView->model()->rowCount()==SqlTabMod->rowCount())
-    {
-        for(int i = 0; i < SqlTabMod->rowCount(); i++)
-        {
-            for(int j = 0; j < 15; j++)
-            {
-                record = SqlTabMod->record(i);
-                item = new QStandardItem(QString(record.value(j).toString()));
-                model->setItem(i,j,item);
-            }
-        }
+    if(Audio->m_playListModel->rowCount()==0){
+        emit signError("Список аудиозаписей пуст");
+        return;
     }
 
-    //Перезапись SqlTabMod в model (Заменить на model.setModel(SQLTABMod)
-    if(ui->tableView->model()->rowCount()==SqlWrite->rowCount())
+    //****************Запись из таблицы tableView в модель model
+    for(int i = 0; i < modelTable->rowCount(); i++)
     {
-        for(int i = 0; i < SqlWrite->rowCount(); i++)
+        for(int j = 0; j < 15; j++)
         {
-            for(int j = 0; j < 15; j++)
-            {
-                record = SqlWrite->record(i);
-                item = new QStandardItem(QString(record.value(j).toString()));
-                model->setItem(i,j,item);
-            }
+            item = new QStandardItem(QString(modelTable->data(modelTable->index(i,j)).toString()));
+            model2->setItem(i,j,item);
         }
     }
+    //************************************
 
-    model->setHorizontalHeaderLabels(horizontalHeaderMy()); // Записываем заголовки
+    model2->setHorizontalHeaderLabels(horizontalHeaderMy()); // Записываем заголовки
 
+    int colZapGreen=0;
+    QString callType;
+    QString nameFile;
+    QString dateTime;
+    QString number;
+    QString NamePeople;
+    QString duration;
+    QString filesize;
+
+    //*******************Само разукрашивание
     int k = 0;
-    // model->item(0,2)->setBackground(Qt::yellow);
-    for(int i = 0; i < model->rowCount(); i++)
+    int j = 0;
+    int _zapInBD=0; //Кол-во записей добавленных в БД по результату проверки на наличие в БД
+    for(int i = 0; i < Audio->m_playListModel->rowCount() ; i++)
     {
-        for(int j = 0; j < Audio->m_playListModel->rowCount(); j++)
+        for(j = 0; j < model2->rowCount(); j++)
         {
-            if(model->item(i,1)->text()==Audio->m_playListModel->item(j,0)->text())
+            if(model2->item(j,1)->text()==Audio->m_playListModel->item(i,0)->text()){
                 k++;
+                break;
+            }
         }
         switch (k) {
-        case 0://Если записи нет, то в таблице выделяем красным
-            model->item(i,1)->setBackground(Qt::red);
-            model->item(i,2)->setBackground(Qt::red);
-            model->item(i,3)->setBackground(Qt::red);
-            model->item(i,4)->setBackground(Qt::red);
-            model->item(i,5)->setBackground(Qt::red);
-            model->item(i,6)->setBackground(Qt::red);
-            model->item(i,7)->setBackground(Qt::red);
-            model->item(i,8)->setBackground(Qt::red);
-            break;
+        case 0://Если записи нет в БД, то ее добавляем
+        {
+             callType="3";
+             nameFile=Audio->m_playListModel->item(i,0)->text();//nameFile записывается в эту переменную из модели
+             dateTime =  Audio->m_playListModel->item(i,2)->text();
+             number = Audio->m_playListModel->item(i,3)->text();
+             NamePeople = Audio->m_playListModel->item(i,4)->text();
+             duration = Audio->m_playListModel->item(i,5)->text();
+             filesize = Audio->m_playListModel->item(i,6)->text();
+
+             //**********Поиск последнего id элемента базы CallRecProg.db****************//
+             db.setDatabaseName(PATH);   //Каталог базы данных в которую будет запись
+             db.open();
+             QSqlQuery CallRecquery(db);
+             int CallRecID=0;
+             CallRecquery.exec("SELECT id FROM record");
+             while (CallRecquery.next())
+                 CallRecID=CallRecquery.value(0).toInt();
+             // qDebug()<< "Последний элемент"<< CallRecID;//Вывод последненго элемента
+             //*************************************************************************//
+
+             //Проверяет на повторяющиеся значения по nameFile и dateTimeRec, если не повторяется то записывает в базу данных
+             CallRecquery.prepare("SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE nameFile LIKE :nameFile");
+             CallRecquery.bindValue(":nameFile", nameFile);// поиск переменной в базе данных RecordDB
+             CallRecquery.exec();
+             CallRecquery.first();
+
+             if(CallRecquery.value(0).isNull()) // Если значения нет то записываем в базу
+             {
+                 CallRecquery.prepare("insert into record(id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType)"
+                                      "values(:id, :nameFile, :namePeople, :number, :dateTimeRec, :numberModif, :fileSize, :fileLenght, :callType)");
+                 CallRecquery.bindValue(":id", CallRecID+1);
+                 CallRecquery.bindValue(":nameFile",nameFile);
+                 CallRecquery.bindValue(":namePeople", NamePeople);
+                 CallRecquery.bindValue(":number", number);
+                 CallRecquery.bindValue(":dateTimeRec", dateTime);
+                 //проверка записи телефона
+                 if((number.count()>10))
+                     if(!((number[0]=='+') && (number[1]=='8')))
+                         if((number[0]=='+') && (number[1]=='7'))
+                             number.remove(0,2);
+                         else
+                             if((number[0]=='8') && (number.count()>10))
+                                 number.remove(0,1);
+                 CallRecquery.bindValue(":numberModif", number);
+                 QStringList text1 = Audio->m_playListModel->item(i,1)->text().split('/',QString::SkipEmptyParts);
+                 if(text1.at(text1.count()-1)=="Outgoing")
+                     callType = "2";
+                 CallRecquery.bindValue(":fileSize", filesize);
+                 CallRecquery.bindValue(":fileLenght", duration);
+                 CallRecquery.bindValue(":callType", callType);
+
+                 CallRecquery.exec();
+                 _zapInBD++;
+                 //После добавления в таблице выделяем желтым
+                 model2->item(CallRecID+1,1)->setBackground(Qt::yellow);
+                 model2->item(CallRecID+1,2)->setBackground(Qt::yellow);
+                 model2->item(CallRecID+1,3)->setBackground(Qt::yellow);
+                 model2->item(CallRecID+1,4)->setBackground(Qt::yellow);
+                 model2->item(CallRecID+1,5)->setBackground(Qt::yellow);
+                 model2->item(CallRecID+1,6)->setBackground(Qt::yellow);
+                 model2->item(CallRecID+1,7)->setBackground(Qt::yellow);
+                 model2->item(CallRecID+1,8)->setBackground(Qt::yellow);
+             }
+             break;
+        }
         case 1://Если запись есть, то в таблице выделяем зеленым
-            qDebug() <<  model->item(i,1)->text();
-            model->item(i,1)->setBackground(Qt::green);
-            model->item(i,2)->setBackground(Qt::green);
-            model->item(i,3)->setBackground(Qt::green);
-            model->item(i,4)->setBackground(Qt::green);
-            model->item(i,5)->setBackground(Qt::green);
-            model->item(i,6)->setBackground(Qt::green);
-            model->item(i,7)->setBackground(Qt::green);
-            model->item(i,8)->setBackground(Qt::green);
+            model2->item(j,1)->setBackground(Qt::green);
+            model2->item(j,2)->setBackground(Qt::green);
+            model2->item(j,3)->setBackground(Qt::green);
+            model2->item(j,4)->setBackground(Qt::green);
+            model2->item(j,5)->setBackground(Qt::green);
+            model2->item(j,6)->setBackground(Qt::green);
+            model2->item(j,7)->setBackground(Qt::green);
+            model2->item(j,8)->setBackground(Qt::green);
+            colZapGreen++;
             break;
         default:
-            QMessageBox::critical(NULL, "Ошибка", "Повторяющиеся значения в базе");
+            qDebug() << "Ошибка повторяющихся значений";
+          //  QMessageBox::critical(NULL, "Ошибка", "Повторяющиеся аудиозаписи");
             break;
         }
         k=0;
     }
+    //**************************************************
+    emit signpayPrintEnd(model2,colZapGreen,_zapInBD);
+}
 
-    // Доработать запись аудиозаписи в базу данных, которая там не значится
-    for(int i = 0; i < Audio->m_playListModel->rowCount(); i++)
-    {
-        for(int j = 0; j < model->rowCount(); j++)
-        {
-            if(model->item(j,1)->text()==Audio->m_playListModel->item(i,0)->text())
-                k++;
-        }
-        if(k==0)
-        {
-            QString callType="1";
-            QStringList text = Audio->m_playListModel->item(i,0)->text().split('_',QString::SkipEmptyParts);
-            QString nameFile=Audio->m_playListModel->item(i,0)->text();//nameFile записывается в эту переменную из модели
-            QString NamePeople = text.at(0).mid(1,text.at(0).count()-2);
-            QString number = text.at(1).mid(1,text.at(1).count()-2);
-            QString dateTime = text.at(2).mid(1,text.at(2).count()-2) + " " + text.at(3).mid(1,text.at(3).count()-6);
-            //Приведение даты к unix формату
-            QDateTime dt;
-            dt = dt.fromString(dateTime,"dd-MM-yyyy HH-mm-ss");
-            uint unix=dt.toTime_t(); //в UNIX формат
-            dateTime = QString::number(unix);
+void MainWindow::payPrintThread()
+{
+    QAbstractItemModel *modelTable; // Переменная для записи модели из таблицы
 
-            //**********Поиск последнего id элемента базы CallRecProg.db****************//
-            db.setDatabaseName(PATH);   //Каталог базы данных в которую будет запись
-            db.open();
-            QSqlQuery CallRecquery(db);
-            int CallRecID=0;
-            CallRecquery.exec("SELECT id FROM record");
-            while (CallRecquery.next())
-                CallRecID=CallRecquery.value(0).toInt();
-            //*************************************************************************//
-            qDebug()<< "Последний элемент"<< CallRecID;//Вывод последненго элемента
+    modelTable=ui->tableView->model();
+    QtConcurrent::run(this,&MainWindow::payPrint,modelTable);
+}
 
-
-            CallRecquery.prepare("insert into record(id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType)"
-                                 "values(:id, :nameFile, :namePeople, :number, :dateTimeRec, :numberModif, :fileSize, :fileLenght, :callType)");
-            CallRecquery.bindValue(":id", CallRecID+1);
-            CallRecquery.bindValue(":nameFile",nameFile);
-            CallRecquery.bindValue(":namePeople", NamePeople);
-            CallRecquery.bindValue(":number", number);
-            CallRecquery.bindValue(":dateTimeRec", dateTime);
-            //проверка записи телефона
-            if((number.count()>10))
-                if(!((number[0]=='+') && (number[1]=='8')))
-                    if((number[0]=='+') && (number[1]=='7'))
-                        number.remove(0,2);
-                    else
-                        if((number[0]=='8') && (number.count()>10))
-                            number.remove(0,1);
-            CallRecquery.bindValue(":numberModif", number);
-            QFile file(Audio->m_playListModel->item(i,1)->text());
-            file.open(QIODevice::ReadOnly);
-            QString fileSize = QString::number(file.size());
-            QStringList text1 = Audio->m_playListModel->item(i,1)->text().split('/',QString::SkipEmptyParts);
-            if(text1.at(text1.count()-1)=="Outgoing")
-                callType = "2";
-            file.close();
-
-            CallRecquery.bindValue(":fileSize", fileSize);
-            CallRecquery.bindValue(":fileLenght", "0");
-            CallRecquery.bindValue(":callType", callType);
-
-            CallRecquery.exec();
-        }
-    }
-    ui->tableView->setModel(model);
+void MainWindow::payPrintEnd(QStandardItemModel*model2, int colZapGreen, int _zapInBD)
+{
+    ui->tableView->setModel(model2);
     ui->tableView->resizeRowsToContents();
     ui->tableView->resizeColumnsToContents();
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
     ui->tableView->setColumnHidden(0,true);
-    ui->statusBar->showMessage(QString("%1 Добавить, Кол-во записей :%2")
-                               .arg(12 ,0,'f',0)
-                               .arg( model->rowCount()), 0 );
+    ui->statusBar->showMessage(QString("Кол-во записей :%1, Найденных аудиозаписей в БД %2, Записанных аудио записей в БД %3")
+                               .arg(model2->rowCount()).arg(colZapGreen).arg( _zapInBD ));
     ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers); // для невозможности изменения
 }
 
@@ -971,7 +1036,7 @@ void MainWindow::bdbdThread()
 QStringList MainWindow::horizontalHeaderMy() //Заголовок таблицы
 {
     QStringList horizontalHeader;
-    horizontalHeader.append("111");
+   // horizontalHeader.append("111");
     horizontalHeader.append("ID");
     horizontalHeader.append("Имя файла");
     horizontalHeader.append("Имя контакта");
@@ -1031,4 +1096,10 @@ MainWindow::~MainWindow()
 void MainWindow::MainWindow2(QSqlDatabase db1)
 {
     db = db1;
+}
+
+void MainWindow::slotError(QString text)
+{
+    QPoint p = QCursor::pos(); //Текущее положение мышки (х,у)
+    QWhatsThis::showText(QPoint(p.x(),p.y()),text);
 }

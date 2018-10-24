@@ -57,6 +57,7 @@ private slots:
     void FindRecord(QString textSort);//Сортировка
     void click_findOk();//при изменении текста, значение передается в фун-ию сортировки
     void bdbd(); //Перенос из модели в базу данных
+    void bdbdThread();
     void migrationMeizu(); //миграция базы данных contacts2 и RecorderDb в одну модель
 
     void setMusicRange(qint64 time);//При воспроизведении передвигается ползунок
@@ -68,9 +69,11 @@ private slots:
     QStringList FileFinder(const QDir& dir);//Рекурсивная функция поиска файлов и запись в переменнную типа LIST
     void on_btn_add_clicked();//Выбор папки хранения аудиофайлов
     void inizilizeProgBar(int range);//Инициализация линии прогресса записи в БД
-    void payPrint();//Раскрашиваение элементов
+    void payPrint(QAbstractItemModel *modelTable);//Раскрашиваение элементов
+    void payPrintThread();
+    void payPrintEnd(QStandardItemModel *model2,int colZapGreen,int _zapInBD);
     void smsCreate();  // Создание формы "SMS"
-    void bdbdThread();  // Создание формы "SMS"
+
 
     void onItemActivated(QModelIndex index);
     QStringList horizontalHeaderMy();//Заголовок таблицы
@@ -81,8 +84,11 @@ private slots:
     void closeEvent(QCloseEvent *);
 
     void MainWindow2(QSqlDatabase db1); // Принимает БД
+    void slotError(QString text);
 
 signals:
+    void signError(QString error);
+    void signpayPrintEnd(QStandardItemModel *model2,int colZapGreen,int _zapInBD);
     void signProgresBarHidden(bool a);
     void signProgresBar(int step);
     void signInizilizeProgBar(int range);

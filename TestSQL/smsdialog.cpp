@@ -11,6 +11,12 @@ smsDialog::smsDialog(QSqlDatabase db, QString PATH, QWidget *parent) :
     ui(new Ui::smsDialog)
 {
     ui->setupUi(this);
+    model = new QStandardItemModel;
+    contact = new QSqlQueryModel;
+    contact2 = new QSqlQueryModel;
+    model2 = new QStandardItemModel;
+    FileDir="";//папка с выбранными файлами
+    isClosed=false; // закрытие приложения
     ui->progressBar->setVisible(false);
     ui->progressBar->setAlignment(Qt::AlignCenter);
     ui->lineEdit->setText("SELECT * FROM sms ORDER BY address ASC;");
