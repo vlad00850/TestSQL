@@ -498,6 +498,8 @@
      <string>Меню</string>
     </property>
     <addaction name="actionSMs"/>
+    <addaction name="action_startNetwork"/>
+    <addaction name="action_network_2"/>
    </widget>
    <addaction name="menuSMs"/>
   </widget>
@@ -505,6 +507,16 @@
   <action name="actionSMs">
    <property name="text">
     <string>SMs</string>
+   </property>
+  </action>
+  <action name="action_startNetwork">
+   <property name="text">
+    <string>Запуск network</string>
+   </property>
+  </action>
+  <action name="action_network_2">
+   <property name="text">
+    <string>Остановка network</string>
    </property>
   </action>
  </widget>

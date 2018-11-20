@@ -26,9 +26,10 @@
 #include <QMessageBox>
 #include <QApplication>
 
-#include "audio.h"
+#include "audioplayeer.h"
 #include "database.h"
 #include "smsdialog.h"
+#include "mynetworktelegram.h"
 
 namespace Ui {
 class MainWindow;
@@ -45,10 +46,11 @@ public:
     QSqlDatabase db;
     QSqlTableModel *SqlTabMod;
     smsDialog *formsms;
+    mynetworktelegram *teleg;
 
 private:
     Ui::MainWindow *ui;
-    audio *Audio;
+    audioplayeer *audioPlay;
 
 private slots:
     void SelectDataBase(); //Выбор БД
@@ -78,13 +80,16 @@ private slots:
     void onItemActivated(QModelIndex index);
     QStringList horizontalHeaderMy();//Заголовок таблицы
 
-    void writeSql(); //для запросов в БД
+    void writeSql(QString sql="teleg"); //для запросов в БД
 
     void currentTrackLabel(int index);//Для вывода в Label - currentTrack трека который воспроизводится
     void closeEvent(QCloseEvent *);
 
     void MainWindow2(QSqlDatabase db1); // Принимает БД
     void slotError(QString text);
+    void startNetwork();
+
+    void readAndSendTeleg();
 
 signals:
     void signError(QString error);
@@ -94,6 +99,8 @@ signals:
     void signInizilizeProgBar(int range);
     void combobox2click();
     void openBD(QString PATH,QSqlDatabase* db);
+
+    void sendMessageTeleg(QString message);
 };
 
 #endif // MAINWINDOW_H

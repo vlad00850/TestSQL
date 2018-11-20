@@ -15,13 +15,15 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     smsdialog.cpp \
-    audio.cpp \
-    database.cpp
+    database.cpp \
+    mynetworktelegram.cpp \
+    audioplayeer.cpp
 
 HEADERS  += mainwindow.h \
     smsdialog.h \
-    audio.h \
-    database.h
+    database.h \
+    mynetworktelegram.h \
+    audioplayeer.h
 
 FORMS    += mainwindow.ui \
     smsdialog.ui
@@ -34,3 +36,5 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/ -llibtag
 
 INCLUDEPATH += $$PWD/taglib
 DEPENDPATH += $$PWD/taglib
+
+include($$PWD/telegram/QtTelegramBot.pri)

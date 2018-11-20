@@ -43,29 +43,28 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-
     ui->setupUi(this);
     SqlWrite = new QSqlQueryModel;
     SqlTabMod= new QSqlTableModel;
 
-    Audio = new audio();
-    ui->playlistView->setModel(Audio->m_playListModel);
+    audioPlay = new audioplayeer();
+    ui->playlistView->setModel(audioPlay->m_playListModel);
 
-    connect(ui->btn_previous, SIGNAL(clicked()),Audio->m_playlist,SLOT(previous()));
-    connect(ui->btn_next, SIGNAL(clicked()),Audio->m_playlist,SLOT(next()));
-    connect(ui->btn_play, SIGNAL(clicked()),Audio->m_player,SLOT(play()));
-    connect(ui->btn_pause, SIGNAL(clicked()),Audio->m_player,SLOT(pause()));
-    connect(ui->btn_stop, SIGNAL(clicked()),Audio->m_player,SLOT(stop()));
+    connect(ui->btn_previous, SIGNAL(clicked()),audioPlay->m_playlist,SLOT(previous()));
+    connect(ui->btn_next, SIGNAL(clicked()),audioPlay->m_playlist,SLOT(next()));
+    connect(ui->btn_play, SIGNAL(clicked()),audioPlay->m_player,SLOT(play()));
+    connect(ui->btn_pause, SIGNAL(clicked()),audioPlay->m_player,SLOT(pause()));
+    connect(ui->btn_stop, SIGNAL(clicked()),audioPlay->m_player,SLOT(stop()));
 
     ui->currentTrack->setText(" ");//Трек который воспроизводится
     //**********************Звук****************************
     ui->horizontalSlider->setRange(0,100);//Задаем, что с 0 до 100 будет передвигаться ползунок
-    connect(ui->horizontalSlider, SIGNAL(valueChanged(int)),Audio->m_player,SLOT(setVolume(int)));//Громкость воспроизведения и горизонтальный ползунок
+    connect(ui->horizontalSlider, SIGNAL(valueChanged(int)),audioPlay->m_player,SLOT(setVolume(int)));//Громкость воспроизведения и горизонтальный ползунок
     connect(ui->horizontalSlider, SIGNAL(valueChanged(int)),ui->volumLabel,SLOT(setNum(int)));//Громкость воспроизведения и запись в label
     ui->horizontalSlider->setValue(50);//Начальное значение ползунка
     //********************Ползунок воспроизмеделния трека***********************************
-    connect(Audio->m_player, SIGNAL(positionChanged(qint64)), this, SLOT(setMusicRange(qint64)));//Передача параметра позиции записи по времени
-    connect(ui->horizontalSlider_2, SIGNAL(valueChanged(int)),Audio,SLOT(setPosition(int)));//Прокрутка времени
+    connect(audioPlay->m_player, SIGNAL(positionChanged(qint64)), this, SLOT(setMusicRange(qint64)));//Передача параметра позиции записи по времени
+    connect(ui->horizontalSlider_2, SIGNAL(valueChanged(int)),audioPlay,SLOT(setPosition(int)));//Прокрутка времени
     //**************************************************************************************
 
     //Для записи в главную таблицу
@@ -75,6 +74,7 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
     connect(ui->btn_paint, SIGNAL(clicked()), SLOT(payPrintThread()));
     connect(this,SIGNAL(signpayPrintEnd(QStandardItemModel*,int,int)),SLOT(payPrintEnd(QStandardItemModel*,int,int)));
     connect(ui->actionSMs,SIGNAL(triggered()), SLOT(smsCreate()));
+    connect(ui->action_startNetwork,SIGNAL(triggered()), SLOT(startNetwork()));
 
     ui->progressBar->setVisible(false);
     ui->progressBar->setAlignment(Qt::AlignCenter);
@@ -112,8 +112,8 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
     connect(ui->pushButton, SIGNAL(clicked()), SLOT(SelectDataBase()));
     //**********************************
 
-    connect(ui->playlistView, SIGNAL(doubleClicked(QModelIndex)),Audio,SLOT(setCurrentIndex(QModelIndex))); // Двойной клик на представление playlistView и запуск трека
-    connect(Audio->m_playlist, SIGNAL(currentIndexChanged(int)),this, SLOT(currentTrackLabel(int)));//Для вывода в Label - currentTrack трека который воспроизводится
+    connect(ui->playlistView, SIGNAL(doubleClicked(QModelIndex)),audioPlay,SLOT(setCurrentIndex(QModelIndex))); // Двойной клик на представление playlistView и запуск трека
+    connect(audioPlay->m_playlist, SIGNAL(currentIndexChanged(int)),this, SLOT(currentTrackLabel(int)));//Для вывода в Label - currentTrack трека который воспроизводится
 
     connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), SLOT(getId(QModelIndex)));//Воспроизведение трека по двойному щелчку TableView
     connect(ui->pushButton_2, SIGNAL(clicked()), SLOT(bdbdThread()));//Перенос из model в БД
@@ -140,7 +140,7 @@ MainWindow::MainWindow(QSqlDatabase db1 , QWidget *parent) :
 //Для вывода в Label - currentTrack трека который воспроизводится
 void MainWindow::currentTrackLabel(int index)
 {
-    ui->currentTrack->setText(Audio->m_playListModel->data(Audio->m_playListModel->index(index,0)).toString());
+    ui->currentTrack->setText(audioPlay->m_playListModel->data(audioPlay->m_playListModel->index(index,0)).toString());
 }
 
 //***********При двойном клике запускается файл аудиозаписи*******************
@@ -150,13 +150,13 @@ void MainWindow::getId(QModelIndex row)
     QString text = row.sibling(row.row(),1).data(Qt::DisplayRole).toString(); //Текстовая строка выбранной строки (имя файла)
     qDebug() << text;
     //Поиск по модели m_playListModel, где храняться файлы
-    for(int i = 0; i< Audio->m_playListModel->rowCount(); i++)
+    for(int i = 0; i< audioPlay->m_playListModel->rowCount(); i++)
     {
-        if(text==Audio->m_playListModel->item(i,0)->text())
+        if(text==audioPlay->m_playListModel->item(i,0)->text())
         {
-            result=Audio->m_playListModel->indexFromItem(Audio->m_playListModel->item(i,0));
-            Audio->setCurrentIndex(result);//Передача в функцию воспроизведения трека
-            ui->label_3->setText(Audio->m_playListModel->item(i,1)->text());
+            result=audioPlay->m_playListModel->indexFromItem(audioPlay->m_playListModel->item(i,0));
+            audioPlay->setCurrentIndex(result);//Передача в функцию воспроизведения трека
+            ui->label_3->setText(audioPlay->m_playListModel->item(i,1)->text());
         }
     }
 }
@@ -602,9 +602,9 @@ void MainWindow::InOutCall()
     QString query;
 
     if(ui->radioButton->isChecked())
-       query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=1 and callType=3";
+       query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=1 or callType=3";
     if(ui->radioButton_2->isChecked())
-        query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=2 and callType=3";
+        query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE callType=2 or callType=3";
     if(ui->radioButton_3->isChecked())//Исходное состояние
         query = "SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record";
 
@@ -657,6 +657,7 @@ void MainWindow::FindRecord(QString textSort)
         {
             ui->comboBox_2->setVisible(false);
             query = QString("SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE number LIKE %1 ").arg(par1);
+            qDebug() << query;
         }
 
         if(ui->comboBox->currentIndex()==1)
@@ -795,12 +796,12 @@ void MainWindow::on_btn_add_clicked()
                 items.append(new QStandardItem(QString("%1").arg(f.audioProperties()->lengthInSeconds())));//Продолжительность
                 items.append(new QStandardItem(QString::number(s.size()/1024)));//"Размер в КБ
             }
-            Audio->m_playListModel->appendRow(items);
-            Audio->m_playlist->addMedia(QUrl(filePath));
+            audioPlay->m_playListModel->appendRow(items);
+            audioPlay->m_playlist->addMedia(QUrl(filePath));
         }
        if((QString(QDir(filePath).dirName()).indexOf(reg2)!=-1))
        {
-                Audio->m_playlist->addMedia(QUrl(filePath));
+                audioPlay->m_playlist->addMedia(QUrl(filePath));
                 QFile g2(filePath);
                 QStringList List = QString(QDir(filePath).dirName()).split('_',QString::SkipEmptyParts);
                 //******************Приведение даты к unix формату
@@ -815,18 +816,18 @@ void MainWindow::on_btn_add_clicked()
                 items.append(new QStandardItem("777"));//Продолжительность //Невозможно получить кол-во секунд(TagLib
                                                                            //смотрит на Сводку,а QMediaMetaData не отображает) Вариант через QMediaPlayer
                 items.append(new QStandardItem(QString::number(g2.size()/1024)));//"Размер в КБ
-                Audio->m_playListModel->appendRow(items);
+                audioPlay->m_playListModel->appendRow(items);
         }
     }
     ui->btn_paint->setEnabled(true);
 
-    Audio->m_playListModel->setHeaderData(0, Qt::Horizontal, QObject::tr("Имя файла"));
-    Audio->m_playListModel->setHeaderData(1, Qt::Horizontal, QObject::tr("Путь"));
-    Audio->m_playListModel->setHeaderData(2, Qt::Horizontal, QObject::tr("Дата"));
-    Audio->m_playListModel->setHeaderData(3, Qt::Horizontal, QObject::tr("Номер телефона"));
-    Audio->m_playListModel->setHeaderData(4, Qt::Horizontal, QObject::tr("Имя контакта"));
-    Audio->m_playListModel->setHeaderData(5, Qt::Horizontal, QObject::tr("Продолжительность"));
-    Audio->m_playListModel->setHeaderData(6, Qt::Horizontal, QObject::tr("Размер"));
+    audioPlay->m_playListModel->setHeaderData(0, Qt::Horizontal, QObject::tr("Имя файла"));
+    audioPlay->m_playListModel->setHeaderData(1, Qt::Horizontal, QObject::tr("Путь"));
+    audioPlay->m_playListModel->setHeaderData(2, Qt::Horizontal, QObject::tr("Дата"));
+    audioPlay->m_playListModel->setHeaderData(3, Qt::Horizontal, QObject::tr("Номер телефона"));
+    audioPlay->m_playListModel->setHeaderData(4, Qt::Horizontal, QObject::tr("Имя контакта"));
+    audioPlay->m_playListModel->setHeaderData(5, Qt::Horizontal, QObject::tr("Продолжительность"));
+    audioPlay->m_playListModel->setHeaderData(6, Qt::Horizontal, QObject::tr("Размер"));
     ui->playlistView->resizeRowsToContents();
     ui->playlistView->resizeColumnsToContents();
     ui->playlistView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
@@ -869,7 +870,7 @@ void MainWindow::payPrint(QAbstractItemModel *modelTable) //Все аудиоз�
     model2->clear();
     QStandardItem *item;
 
-    if(Audio->m_playListModel->rowCount()==0){
+    if(audioPlay->m_playListModel->rowCount()==0){
         emit signError("Список аудиозаписей пуст");
         return;
     }
@@ -900,11 +901,11 @@ void MainWindow::payPrint(QAbstractItemModel *modelTable) //Все аудиоз�
     int k = 0;
     int j = 0;
     int _zapInBD=0; //Кол-во записей добавленных в БД по результату проверки на наличие в БД
-    for(int i = 0; i < Audio->m_playListModel->rowCount() ; i++)
+    for(int i = 0; i < audioPlay->m_playListModel->rowCount() ; i++)
     {
         for(j = 0; j < model2->rowCount(); j++)
         {
-            if(model2->item(j,1)->text()==Audio->m_playListModel->item(i,0)->text()){
+            if(model2->item(j,1)->text()==audioPlay->m_playListModel->item(i,0)->text()){
                 k++;
                 break;
             }
@@ -913,12 +914,12 @@ void MainWindow::payPrint(QAbstractItemModel *modelTable) //Все аудиоз�
         case 0://Если записи нет в БД, то ее добавляем
         {
              callType="3";
-             nameFile=Audio->m_playListModel->item(i,0)->text();//nameFile записывается в эту переменную из модели
-             dateTime =  Audio->m_playListModel->item(i,2)->text();
-             number = Audio->m_playListModel->item(i,3)->text();
-             NamePeople = Audio->m_playListModel->item(i,4)->text();
-             duration = Audio->m_playListModel->item(i,5)->text();
-             filesize = Audio->m_playListModel->item(i,6)->text();
+             nameFile=audioPlay->m_playListModel->item(i,0)->text();//nameFile записывается в эту переменную из модели
+             dateTime =  audioPlay->m_playListModel->item(i,2)->text();
+             number = audioPlay->m_playListModel->item(i,3)->text();
+             NamePeople = audioPlay->m_playListModel->item(i,4)->text();
+             duration = audioPlay->m_playListModel->item(i,5)->text();
+             filesize = audioPlay->m_playListModel->item(i,6)->text();
 
              //**********Поиск последнего id элемента базы CallRecProg.db****************//
              db.setDatabaseName(PATH);   //Каталог базы данных в которую будет запись
@@ -955,7 +956,7 @@ void MainWindow::payPrint(QAbstractItemModel *modelTable) //Все аудиоз�
                              if((number[0]=='8') && (number.count()>10))
                                  number.remove(0,1);
                  CallRecquery.bindValue(":numberModif", number);
-                 QStringList text1 = Audio->m_playListModel->item(i,1)->text().split('/',QString::SkipEmptyParts);
+                 QStringList text1 = audioPlay->m_playListModel->item(i,1)->text().split('/',QString::SkipEmptyParts);
                  if(text1.at(text1.count()-1)=="Outgoing")
                      callType = "2";
                  CallRecquery.bindValue(":fileSize", filesize);
@@ -1055,17 +1056,24 @@ QStringList MainWindow::horizontalHeaderMy() //Заголовок таблицы
     return horizontalHeader;
 }
 
-void MainWindow::writeSql()
+void MainWindow::writeSql(QString sql)
 {
-    SqlWrite->setQuery(ui->lineEdit_2->text());
+    if(sql=="teleg")
+        sql=ui->lineEdit_2->text();
+    SqlWrite->setQuery(sql);
+
     ui->tableView->setModel(SqlWrite);
     ui->tableView->resizeRowsToContents();
     ui->tableView->resizeColumnsToContents();
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
+
+    //Прокрутка для tableView
+    while (SqlWrite->canFetchMore())
+        SqlWrite->fetchMore();
+
     ui->tableView->setColumnHidden(0,true);
     ui->statusBar->showMessage(QString("Кол-во записей :%1")
                                .arg( SqlWrite->rowCount()), 0 );
-    ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers); // для невозможности изменения
 }
 
 //при изменении текста, значение передается в фун-ию сортировки
@@ -1078,11 +1086,11 @@ void MainWindow::click_findOk()
 //При воспроизведении передвигается ползунок
 void MainWindow::setMusicRange(qint64 time)
 {
-    ui->horizontalSlider_2->setRange(0,Audio->m_player->duration());
+    ui->horizontalSlider_2->setRange(0,audioPlay->m_player->duration());
     QTime displayTime(0, (time/60000) % 60, (time / 1000) % 60); //Из qint64 в формат QTime
     ui->musicLabStart->setText(displayTime.toString("mm:ss")); // Label начала
     ui->horizontalSlider_2->setValue((int)time); //Перемещение ползунка с воспроизведением трека
-    QTime displayTimeEnd(0, (Audio->m_player->duration()/60000) % 60, (Audio->m_player->duration() / 1000) % 60);
+    QTime displayTimeEnd(0, (audioPlay->m_player->duration()/60000) % 60, (audioPlay->m_player->duration() / 1000) % 60);
     ui->musicLabEnd->setText(displayTimeEnd.toString("mm:ss")); // Запись в Label длинны записи трека
 }
 
@@ -1102,4 +1110,35 @@ void MainWindow::slotError(QString text)
 {
     QPoint p = QCursor::pos(); //Текущее положение мышки (х,у)
     QWhatsThis::showText(QPoint(p.x(),p.y()),text);
+}
+
+void MainWindow::startNetwork()
+{
+    teleg = new mynetworktelegram(this);//передать бд?(bd)
+    connect(teleg, SIGNAL(writeSql(QString)),this, SLOT(writeSql(QString)));
+    connect(this, SIGNAL(sendMessageTeleg(QString)),teleg, SLOT(sendMessage(QString)));
+    connect(teleg, SIGNAL(readbd()),this, SLOT(readAndSendTeleg()));
+
+}
+
+void MainWindow::readAndSendTeleg()
+{
+//    QAbstractItemModel *modelTable; // Переменная для записи модели из таблицы
+//    modelTable=ui->tableView->model();
+    QString message;
+    QDateTime dt;
+    QString callType;
+    emit sendMessageTeleg(QString("Количество записей:" + QString::number(SqlWrite->rowCount())));
+    for(int i = 0; i < SqlWrite->rowCount(); i++)
+    {
+        if(SqlWrite->record(i).value(8).toInt()==1)
+            callType = "Входящий";
+        if(SqlWrite->record(i).value(8).toInt()==2)
+            callType = "Исходящий";
+        else callType = "3";
+        dt.setTime_t(SqlWrite->record(i).value(4).toLongLong()-3600);
+        message = QString("id " + SqlWrite->record(i).value(0).toString() + " Имя контакта: " + SqlWrite->record(i).value(2).toString() +
+                          "Дата :" + dt.toString("dd.MM.yyyy HH:mm:ss")  + " Продолжительность с." + SqlWrite->record(i).value(7).toString() + "Тип вызова  "+ callType);
+        emit sendMessageTeleg(message);
+    }
 }

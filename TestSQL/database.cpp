@@ -34,3 +34,4 @@ void database::window()
     window->show(); // Запуск созданной формы
     connect(window, SIGNAL(openBD(QString, QSqlDatabase*)), this, SLOT(open(QString,QSqlDatabase*)));// Сигнал открытия бд из класа MainWindow
 }
+

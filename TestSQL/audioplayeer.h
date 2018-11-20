@@ -8,12 +8,12 @@
 #include "QStandardItemModel"
 #include "QStandardItem"
 
-class audio : public QObject
+class audioplayeer : public QObject
 {
     Q_OBJECT
 public:
-    explicit audio(QObject *parent = 0);
-    ~audio();
+    explicit audioplayeer(QObject *parent = 0);
+    ~audioplayeer();
     QStandardItemModel *m_playListModel;
     QMediaPlayer *m_player;
     QMediaPlaylist *m_playlist;
