@@ -7,26 +7,31 @@
 #include "QtSql/QSqlTableModel"
 #include "QtSql"
 #include "QAbstractItemModel"
+#include "QStandardItemModel"
 
-#include "mainwindow.h"
-
-class database : public QObject
+class databaseMy : public QObject
 {
     Q_OBJECT
 public:
-    explicit database(QObject *parent = 0);
-    ~database();
+    explicit databaseMy(QObject *parent = 0);
+    ~databaseMy();
     QSqlDatabase db;
     QSqlQueryModel SqlWrite;
+    QAbstractItemModel* abstractModel;
 
+    QAbstractItemModel*getAbstractModel() const;
+
+    QSqlDatabase getDb() const;
 
 signals:
-    void dbTransmit(QSqlDatabase db);
+    void signProgresBar(int step);
 
 public slots:
-    void open(QString PATH,QSqlDatabase *db1);
-    void window();
-
+    bool open(QString PATH);
+    QAbstractItemModel* openTable(QString path);
+    QStringList horizontalHeaderMy();
+    QAbstractItemModel* migrationMeizuBD(QAbstractItemModel* contactsModel, QAbstractItemModel* RecorderDbModel);
+    void bdbd(QAbstractItemModel* tabelModel, QString nameBD);
 };
 
 #endif // DATABASE_H

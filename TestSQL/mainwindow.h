@@ -27,26 +27,30 @@
 #include <QApplication>
 
 #include "audioplayeer.h"
-#include "database.h"
+
 #include "smsdialog.h"
 #include "mynetworktelegram.h"
+
+#include "database.h"
 
 namespace Ui {
 class MainWindow;
 }
+
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QSqlDatabase db1, QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     QSqlQueryModel *SqlWrite;
     QSqlDatabase db;
     QSqlTableModel *SqlTabMod;
     smsDialog *formsms;
     mynetworktelegram *teleg;
+    databaseMy myDataBase;
 
 private:
     Ui::MainWindow *ui;
@@ -55,7 +59,6 @@ private:
 private slots:
     void SelectDataBase(); //Выбор БД
     void InOutCall();//Входящий или исходящий сортировка
-    void Zapis(int i, QSqlQuery q);//Вывод на экран записей БД
     void FindRecord(QString textSort);//Сортировка
     void click_findOk();//при изменении текста, значение передается в фун-ию сортировки
     void bdbd(); //Перенос из модели в базу данных
