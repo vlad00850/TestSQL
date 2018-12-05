@@ -50,7 +50,7 @@ public:
     QSqlTableModel *SqlTabMod;
     smsDialog *formsms;
     mynetworktelegram *teleg;
-    databaseMy myDataBase;
+    databaseMy *myDataBase;
 
 private:
     Ui::MainWindow *ui;
@@ -90,6 +90,7 @@ private slots:
 
     void MainWindow2(QSqlDatabase db1); // Принимает БД
     void slotError(QString text);
+    void slotMessage(QString message);
     void startNetwork();
 
     void readAndSendTeleg();

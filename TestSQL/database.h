@@ -22,9 +22,12 @@ public:
     QAbstractItemModel*getAbstractModel() const;
 
     QSqlDatabase getDb() const;
+    bool isClosedBdBd;
+    void setIsClosedBdBd(bool value);
 
 signals:
     void signProgresBar(int step);
+    void sendMessage(QString text);
 
 public slots:
     bool open(QString PATH);
@@ -32,6 +35,7 @@ public slots:
     QStringList horizontalHeaderMy();
     QAbstractItemModel* migrationMeizuBD(QAbstractItemModel* contactsModel, QAbstractItemModel* RecorderDbModel);
     void bdbd(QAbstractItemModel* tabelModel, QString nameBD);
+
 };
 
 #endif // DATABASE_H

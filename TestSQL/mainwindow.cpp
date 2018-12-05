@@ -50,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     audioPlay = new audioplayeer();
     ui->playlistView->setModel(audioPlay->m_playListModel);
+    myDataBase = new databaseMy();
 
     connect(ui->btn_previous, SIGNAL(clicked()),audioPlay->m_playlist,SLOT(previous()));
     connect(ui->btn_next, SIGNAL(clicked()),audioPlay->m_playlist,SLOT(next()));
@@ -125,6 +126,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->statusBar->addPermanentWidget(ui->progressBar,1); // progressBar в нижнюю строку(  statusBar)
     connect(this, SIGNAL(signError(QString)), SLOT(slotError(QString))); //Для вывода ошибки
+    connect(myDataBase, SIGNAL(sendMessage(QString)), SLOT(slotMessage(QString))); //Для вывода ошибки
 
 //    //*************************************************
 //    //для записи в бд
@@ -172,18 +174,21 @@ void MainWindow::onItemActivated(QModelIndex index)
 void MainWindow::SelectDataBase()
 {
     QString pathBd = QFileDialog::getOpenFileName(this, "Выберете файл с базой данных", QString(), "Data basef ile (*.db)");
-    if(pathBd=="")
-         myDataBase.open(PATH);
+    if(pathBd==""){ //Если ничего не выбрали открываем по умолчанию
+        pathBd = PATH;
+        if(!myDataBase->open(PATH))
+            return;
+    }
     else
-         myDataBase.open(pathBd);
+        if(!myDataBase->open(pathBd))
+            return;
 
-    ui->tableView->setModel(myDataBase.openTable(pathBd));
+    ui->tableView->setModel(myDataBase->openTable(pathBd));
     ui->tableView->resizeRowsToContents();
     ui->tableView->resizeColumnsToContents();
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
     ui->tableView ->setEditTriggers(QAbstractItemView::NoEditTriggers); // для невозможности изменения
-    ui->statusBar->showMessage(QString("Кол-во записей :%1")
-                               .arg(myDataBase.getAbstractModel()->rowCount()), 0 );
+    ui->statusBar->showMessage(QString("Кол-во записей :%1     База данных: %2").arg(myDataBase->getAbstractModel()->rowCount()).arg(QString(myDataBase->getDb().databaseName())));
 
 
     if(QDir(pathBd).dirName() == "CallVoiceRecorder.db")
@@ -196,11 +201,10 @@ void MainWindow::SelectDataBase()
         if(ms.clickedButton()==yes)
         {
             ui->pushButton_2->setEnabled(false);
-            QtConcurrent::run(this,&MainWindow::bdbd);
+            this->bdbd();
         }
         if(ms.clickedButton()==no)
             ui->pushButton_2->setEnabled(true);
-
     }
 
 }
@@ -213,17 +217,25 @@ void MainWindow::migrationMeizu()
     QString contacts2 = QFileDialog::getOpenFileName(this, "Выберете файл с базой данных contacts2.db", QString(), "Data basef ile (*.db)");
     if(contacts2=="")
         return;
-    myDataBase.open(contacts2);
-    QAbstractItemModel *contactsModel = myDataBase.openTable(contacts2); //Записываем таблицу в модель
+    myDataBase->open(contacts2);
+    QAbstractItemModel *contactsModel = myDataBase->openTable(contacts2); //Записываем таблицу в модель
 
     //Открываем RecorderDb.db
     QString RecorderDb = QFileDialog::getOpenFileName(this, "Выберете файл с базой данных RecorderDb.db", QString(), "Data basef ile (*.db)");
     if(RecorderDb=="")
         return;
-    myDataBase.open(RecorderDb);
-    QAbstractItemModel *RecorderDbModel = myDataBase.openTable(RecorderDb); //Записываем таблицу в модель
+    myDataBase->open(RecorderDb);
+    QAbstractItemModel *RecorderDbModel = myDataBase->openTable(RecorderDb); //Записываем таблицу в модель
 
-    resultModel = myDataBase.migrationMeizuBD(contactsModel,RecorderDbModel); // Создаем модель общую из contacts2 и RecorderDb
+    resultModel = myDataBase->migrationMeizuBD(contactsModel,RecorderDbModel); // Создаем модель общую из contacts2 и RecorderDb
+
+    ui->tableView->setModel(resultModel);
+    ui->tableView->resizeRowsToContents();
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
+    //ui->tableView->setColumnWidth(2,400); // одну колонку увеличить в размерах 2-колонка
+    ui->tableView->setColumnHidden(0,true);
+    ui->statusBar->showMessage(QString("Кол-во записей :%1").arg(resultModel->rowCount()), 0);
 
     QMessageBox ms;
     QAbstractButton *yes= ms.addButton("Да", QMessageBox::YesRole);
@@ -233,35 +245,26 @@ void MainWindow::migrationMeizu()
     if(ms.clickedButton()==yes)
     {
         ui->pushButton_2->setEnabled(false);
-        QtConcurrent::run(this,&MainWindow::bdbd);
+        this->bdbd();
     }
     if(ms.clickedButton()==no)
         ui->pushButton_2->setEnabled(true);
 
-    ui->tableView->setModel(resultModel);
-    ui->tableView->resizeRowsToContents();
-    ui->tableView->resizeColumnsToContents();
-    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
-    //ui->tableView->setColumnWidth(2,400); // одну колонку увеличить в размерах 2-колонка
-    ui->tableView->setColumnHidden(0,true);
-    ui->statusBar->showMessage(QString("Кол-во записей :%1").arg( resultModel->rowCount()), 0);
     ui->progressBar->reset();
 }
-
 
 //Перенос из модели в базу данных
 void MainWindow::bdbd()
 {
-    //connect(&myDataBase, SIGNAL(signProgresBar(int)),this->ui->progressBar, SLOT(setValue(int)));
+    connect(myDataBase, SIGNAL(signProgresBar(int)),this->ui->progressBar, SLOT(setValue(int)));
     QAbstractItemModel *tableModel = ui->tableView->model();
 
     emit signInizilizeProgBar(tableModel->rowCount());//Сигнал о количестве записей в модели
 
-   // QtConcurrent::run(myDataBase,&databaseMy::bdbd,tableModel, QDir(db.databaseName()).dirName());
+    //qDebug() << QDir(myDataBase->getDb().databaseName()).dirName();
+    QtConcurrent::run(myDataBase,&databaseMy::bdbd, tableModel, QDir(myDataBase->getDb().databaseName()).dirName());
 
     emit signProgresBar(0);
-     QMessageBox::information(NULL, "Сообщение", "Перенос в БД выполнен успешно!");
-
      signProgresBarHidden(false);//скрывает progressBar
     // ui->progressBar->setVisible(false);
 }
@@ -768,7 +771,7 @@ MainWindow::~MainWindow()
 {
     delete ui;
     //delete model;
-    delete formsms;
+  //  delete formsms;
 }
 
 void MainWindow::MainWindow2(QSqlDatabase db1)
@@ -780,6 +783,11 @@ void MainWindow::slotError(QString text)
 {
     QPoint p = QCursor::pos(); //Текущее положение мышки (х,у)
     QWhatsThis::showText(QPoint(p.x(),p.y()),text);
+}
+
+void MainWindow::slotMessage(QString message)
+{
+    QMessageBox::information(NULL, "Сообщение", message);
 }
 
 void MainWindow::startNetwork()

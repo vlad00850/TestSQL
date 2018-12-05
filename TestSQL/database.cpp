@@ -14,6 +14,11 @@ QSqlDatabase databaseMy::getDb() const //Получение базы данны�
     return db;
 }
 
+void databaseMy::setIsClosedBdBd(bool value) //Значение работы метода bdbd()
+{
+    isClosedBdBd = value;
+}
+
 QAbstractItemModel*databaseMy::getAbstractModel() const
 {
     return abstractModel;
@@ -43,7 +48,7 @@ QAbstractItemModel* databaseMy::openTable(QString path)
     QSqlQuery query;
 
     // model->clear();
-
+   // qDebug() << QDir(path).dirName();
     if(QDir(path).dirName() == "CallVoiceRecorder.db")
     {
         // query.exec("SELECT _id, NameFile, PhoneSubscr, NameSubscr, DateTimeRec, CallType, DurationRec, FileSize FROM CALL_RECORDS");
@@ -107,42 +112,124 @@ QAbstractItemModel* databaseMy::openTable(QString path)
     else
         if(QDir(path).dirName() == "contacts2.db")
         {
-            // model->setHorizontalHeaderLabels(horizontalHeaderMy()); //Заголовок таблицы
-            query.exec("SELECT _id, name, normalized_number, date, duration, type, record_uuid FROM calls");
-            while (query.next())
-            {
-                QString id = query.value(0).toString();
-                item = new QStandardItem(QString(id));
-                model->setItem(i,1,item);
+                SqlTabMod->setTable("calls");
+                SqlTabMod->select();
+                SqlTabMod->removeColumn(1);//Удаление всей колонки
+                SqlTabMod->removeColumn(1);//Удаление всей колонки
+                SqlTabMod->removeColumn(3);//Удаление всей колонки
+                SqlTabMod->removeColumn(4);//Удаление всей колонки
+                SqlTabMod->removeColumn(4);//Удаление всей колонки
+                SqlTabMod->removeColumn(4);//Удаление всей колонки
+                SqlTabMod->removeColumn(4);//Удаление всей колонки
+                SqlTabMod->removeColumn(4);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(5);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(6);//Удаление всей колонки
+                SqlTabMod->removeColumn(7);//Удаление всей колонки
+                SqlTabMod->removeColumn(7);//Удаление всей колонки
+                SqlTabMod->removeColumn(7);//Удаление всей колонки
+                SqlTabMod->removeColumn(7);//Удаление всей колонки
+                SqlTabMod->removeColumn(7);//Удаление всей колонки
+                //qDebug() << SqlTabMod->record().fieldName(2);
 
-                QString name = query.value(1).toString();
-                item = new QStandardItem(QString(name));
-                model->setItem(i,3,item);
+                SqlTabMod->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
+                SqlTabMod->setHeaderData(1, Qt::Horizontal, QObject::tr("Дата"));
+                SqlTabMod->setHeaderData(2, Qt::Horizontal, QObject::tr("Продолжительность с."));
+                SqlTabMod->setHeaderData(3, Qt::Horizontal, QObject::tr("Тип вызова"));
+                SqlTabMod->setHeaderData(4, Qt::Horizontal, QObject::tr("Имя контакта"));
+                SqlTabMod->setHeaderData(5, Qt::Horizontal, QObject::tr("Номер тел"));
+                SqlTabMod->setHeaderData(6, Qt::Horizontal, QObject::tr("record_uuid"));
 
-                QString normalized_number = query.value(2).toString();
-                item = new QStandardItem(QString(normalized_number));
-                model->setItem(i,4,item);
+                while (SqlTabMod->canFetchMore())
+                    SqlTabMod->fetchMore();
 
-                QString date = query.value(3).toString().remove(9,3);
-                item = new QStandardItem(QString(date));
-                model->setItem(i,5,item);
 
-                QString duration = query.value(4).toString();
-                item = new QStandardItem(QString(duration));
-                model->setItem(i,8,item);
+                abstractModel = SqlTabMod; //ИЗМЕНЕНИЯ ПРОИСХОДЯТ СРАЗУ В БАЗЕ
 
-                QString type = query.value(5).toString();
-                item = new QStandardItem(QString(type));
-                model->setItem(i,9,item);
+                //Обрезаем у поля date 3 последних цифры
+//                QModelIndex modelIndex;
+//                QAbstractItemModel *modelAbstract;
 
-                QString record_uuid = query.value(6).toString();
-                item = new QStandardItem(QString(record_uuid));
-                model->setItem(i,15,item);
+//                for(int i = 0; i < abstractModel->rowCount(); i++)
+//                {
+//                    modelIndex = abstractModel->index(i,1);
+//                    qDebug() << abstractModel->data(modelIndex).toString().count();
+//                    if(abstractModel->data(modelIndex).toString().count()==13){
+//                        abstractModel->setData(modelIndex,abstractModel->data(modelIndex).toString().remove(10,3));
+//                    }
+//                }
 
-                i++;
-            }
-            abstractModel = model;
-            return model;
+                //Обрезаем у поля date 3 последних цифры
+//                QModelIndex modelIndex;
+//                QAbstractItemModel *modelAbstract;
+
+//                for(int i = 0; i < SqlTabMod->rowCount(); i++)
+//                {
+//                    for(int j = 0; j < 6; j++)
+//                    {
+//                        modelIndex = SqlTabMod->index(i,1);
+//                        qDebug() << abstractModel->data(modelIndex).toString().count();
+//                        if(abstractModel->data(modelIndex).toString().count()==13){
+//                            abstractModel->setData(modelIndex,abstractModel->data(modelIndex).toString().remove(10,3));
+//                        }
+//                        modelAbstract->setData(modelAbstract->index(i,j),abstractModel->data(modelIndex).toString().remove(10,3))
+//                    }
+//                }
+
+//                QString id = query.value(0).toString();
+//                item = new QStandardItem(QString(id));
+//                model->setItem(i,1,item);
+
+//                QString name = query.value(1).toString();
+//                item = new QStandardItem(QString(name));
+//                model->setItem(i,3,item);
+
+//                QString normalized_number = query.value(2).toString();
+//                item = new QStandardItem(QString(normalized_number));
+//                model->setItem(i,4,item);
+
+//                QString date = query.value(3).toString().remove(9,3);
+//                item = new QStandardItem(QString(date));
+//                model->setItem(i,5,item);
+
+//                QString duration = query.value(4).toString();
+//                item = new QStandardItem(QString(duration));
+//                model->setItem(i,8,item);
+
+//                QString type = query.value(5).toString();
+//                item = new QStandardItem(QString(type));
+//                model->setItem(i,9,item);
+
+//                QString record_uuid = query.value(6).toString();
+//                item = new QStandardItem(QString(record_uuid));
+//                model->setItem(i,15,item);
+
+//                i++;
+//            }
+            //abstractModel = SqlTabMod;
+            return abstractModel;
         }
         else
         {
@@ -184,7 +271,7 @@ QAbstractItemModel*databaseMy::migrationMeizuBD(QAbstractItemModel*contactsModel
     for(int i = 0; i < contactsModel->rowCount(); i++)
     {
         RecorderQuery.prepare("SELECT name, size, created, modified, callrecordimsi FROM recorder WHERE callrecordid = :record_uuid");
-        qwe=contactsModel->data(contactsModel->index(i,15)).toLongLong();//record_uuid записывается в эту переменную из модели
+        qwe=contactsModel->data(contactsModel->index(i,6)).toLongLong();//record_uuid записывается в эту переменную из модели
         if(qwe==0)
             continue;
         //qDebug() <<qwe;
@@ -201,15 +288,23 @@ QAbstractItemModel*databaseMy::migrationMeizuBD(QAbstractItemModel*contactsModel
         }
     }
     return RecorderDbModel;
+
+//    SqlTabMod->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
+//    SqlTabMod->setHeaderData(1, Qt::Horizontal, QObject::tr("Дата"));
+//    SqlTabMod->setHeaderData(2, Qt::Horizontal, QObject::tr("Продолжительность с."));
+//    SqlTabMod->setHeaderData(3, Qt::Horizontal, QObject::tr("Тип вызова"));
+//    SqlTabMod->setHeaderData(4, Qt::Horizontal, QObject::tr("Имя контакта"));
+//    SqlTabMod->setHeaderData(5, Qt::Horizontal, QObject::tr("Номер тел"));
+//    SqlTabMod->setHeaderData(6, Qt::Horizontal, QObject::tr("record_uuid"));
 }
 
 //Перенос из модели в базу данных
-//isClosed сигнал остановки
+//isClosedBdBd сигнал остановки
 void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
 {
-
+    isClosedBdBd = false;
     QString numb="";
-
+    int m_nStep=0;
 
     QString PATH =  QDir::current().absolutePath() + "/CallRecProg.db"; //путь к главной БД
 
@@ -226,7 +321,7 @@ void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
 
     if(nameBD == "CallVoiceRecorder.db")
     {
-        for(int i = 0; i < tableModel->rowCount() && !isClosed; i++)
+        for(int i = 0; i < tabelModel->rowCount() && !isClosedBdBd; i++)
         {
             QString nameFile="";
             ++m_nStep;
@@ -235,7 +330,7 @@ void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
                 emit signProgresBar(m_nStep);
 
             CallRecquery.prepare("SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE nameFile LIKE :nameFile");
-            nameFile=tableModel->data(tableModel->index(i,1)).toString();//nameFile записывается в эту переменную из модели
+            nameFile=tabelModel->data(tabelModel->index(i,1)).toString();//nameFile записывается в эту переменную из модели
             //            if(nameFile==NULL)
             //                continue;
             qDebug() << nameFile;
@@ -249,19 +344,19 @@ void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
                 CallRecquery.prepare("insert into record(id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid)"
                                      "values(:id, :nameFile, :namePeople, :number, :dateTimeRec, :numberModif, :fileSize, :fileLenght, :callType, :comment, :priority, :modified, :created, :sim, :record_uuid)");
                 CallRecquery.bindValue(":id", CallRecID);
-                CallRecquery.bindValue(":nameFile", tableModel->data(tableModel->index(i,1)).toString());
-                CallRecquery.bindValue(":namePeople", tableModel->data(tableModel->index(i,4)).toString());
-                CallRecquery.bindValue(":number", tableModel->data(tableModel->index(i,3)).toString());
+                CallRecquery.bindValue(":nameFile", tabelModel->data(tabelModel->index(i,1)).toString());
+                CallRecquery.bindValue(":namePeople", tabelModel->data(tabelModel->index(i,4)).toString());
+                CallRecquery.bindValue(":number", tabelModel->data(tabelModel->index(i,3)).toString());
 
                 //******************Приведение даты к unix формату
                 QDateTime dt;
-                dt = dt.fromString(tableModel->data(tableModel->index(i,6)).toString(),"yyyy-MM-dd HH:mm:ss");
+                dt = dt.fromString(tabelModel->data(tabelModel->index(i,6)).toString(),"yyyy-MM-dd HH:mm:ss");
                 uint unix=dt.toTime_t(); //в UNIX формат
                 CallRecquery.bindValue(":dateTimeRec", QString::number(unix));
                 //******************
 
                 //проверка записи телефона
-                numb=tableModel->data(tableModel->index(i,3)).toString();
+                numb=tabelModel->data(tabelModel->index(i,3)).toString();
                 if((numb.count()>10))
                     if( !((numb[0]=='+') && (numb[1]=='8')))
                         if((numb[0]=='+') && (numb[1]=='7'))
@@ -270,16 +365,16 @@ void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
                             if((numb[0]=='8') && (numb.count()>10))
                                 numb.remove(0,1);
                 CallRecquery.bindValue(":numberModif", numb);
-                CallRecquery.bindValue(":fileSize", tableModel->data(tableModel->index(i,2)).toInt());
-                CallRecquery.bindValue(":fileLenght", tableModel->data(tableModel->index(i,5)).toInt());
-                CallRecquery.bindValue(":callType", tableModel->data(tableModel->index(i,7)).toInt());
+                CallRecquery.bindValue(":fileSize", tabelModel->data(tabelModel->index(i,2)).toInt());
+                CallRecquery.bindValue(":fileLenght", tabelModel->data(tabelModel->index(i,5)).toInt());
+                CallRecquery.bindValue(":callType", tabelModel->data(tabelModel->index(i,7)).toInt());
                 CallRecquery.exec();
             }
         }
     }
     else
     {
-        for(int i = 0; i<tableModel->rowCount() && !isClosed; i++)
+        for(int i = 0; i < tabelModel->rowCount() && !isClosedBdBd; i++)
         {
             QString nameFile="";
             QString dateTimeRec="";
@@ -290,8 +385,8 @@ void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
 
             //Проверяет на повторяющиеся значения по nameFile и dateTimeRec, если не повторяется то записывает в базу данных
             CallRecquery.prepare("SELECT id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid FROM record WHERE nameFile LIKE :nameFile or dateTimeRec LIKE :dateTimeRec");
-            nameFile=tableModel->data(tableModel->index(i,2)).toString();//nameFile записывается в эту переменную из модели
-            dateTimeRec=tableModel->data(tableModel->index(i,5)).toString();
+            nameFile=tabelModel->data(tabelModel->index(i,1)).toString();//nameFile записывается в эту переменную из модели
+            dateTimeRec=tabelModel->data(tabelModel->index(i,7)).toString();
             //            if(nameFile==NULL)
             //                continue;
             CallRecquery.bindValue(":nameFile", nameFile);// поиск переменной в базе данных RecordDB
@@ -305,12 +400,12 @@ void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
                 CallRecquery.prepare("insert into record(id, nameFile, namePeople, number, dateTimeRec, numberModif, fileSize, fileLenght, callType, comment, priority, modified, created, sim, record_uuid)"
                                      "values(:id, :nameFile, :namePeople, :number, :dateTimeRec, :numberModif, :fileSize, :fileLenght, :callType, :comment, :priority, :modified, :created, :sim, :record_uuid)");
                 CallRecquery.bindValue(":id", CallRecID);
-                CallRecquery.bindValue(":nameFile", tableModel->data(tableModel->index(i,2)).toString());
-                CallRecquery.bindValue(":namePeople", tableModel->data(tableModel->index(i,3)).toString());
-                CallRecquery.bindValue(":number", tableModel->data(tableModel->index(i,4)).toString());
-                CallRecquery.bindValue(":dateTimeRec", tableModel->data(tableModel->index(i,5)).toString());
+                CallRecquery.bindValue(":nameFile", tabelModel->data(tabelModel->index(i,1)).toString());
+                CallRecquery.bindValue(":namePeople", tabelModel->data(tabelModel->index(i,3)).toString());
+                CallRecquery.bindValue(":number", tabelModel->data(tabelModel->index(i,4)).toString());
+                CallRecquery.bindValue(":dateTimeRec", tabelModel->data(tabelModel->index(i,5)).toString());
                 //проверка записи телефона
-                numb=tableModel->data(tableModel->index(i,4)).toString();
+                numb=tabelModel->data(tabelModel->index(i,4)).toString();
                 if((numb.count()>10))
                     if( !((numb[0]=='+') && (numb[1]=='8')))
                         if((numb[0]=='+') && (numb[1]=='7'))
@@ -319,22 +414,19 @@ void databaseMy::bdbd(QAbstractItemModel*tabelModel, QString nameBD)
                             if((numb[0]=='8') && (numb.count()>10))
                                 numb.remove(0,1);
                 CallRecquery.bindValue(":numberModif", numb);
-                CallRecquery.bindValue(":fileSize", tableModel->data(tableModel->index(i,7)).toInt());
-                CallRecquery.bindValue(":fileLenght", tableModel->data(tableModel->index(i,8)).toInt());
-                CallRecquery.bindValue(":callType", tableModel->data(tableModel->index(i,9)).toInt());
-                CallRecquery.bindValue(":comment", tableModel->data(tableModel->index(i,10)).toString());
-                CallRecquery.bindValue(":priority", tableModel->data(tableModel->index(i,11)).toInt());
-                CallRecquery.bindValue(":sim", tableModel->data(tableModel->index(i,14)).toString());
-                CallRecquery.bindValue(":modified",tableModel->data(tableModel->index(i,13)).toInt());
-                CallRecquery.bindValue(":created", tableModel->data(tableModel->index(i,12)).toInt());
-                CallRecquery.bindValue(":record_uuid", tableModel->data(tableModel->index(i,15)).toLongLong());
+                CallRecquery.bindValue(":fileSize", tabelModel->data(tabelModel->index(i,7)).toInt());
+                CallRecquery.bindValue(":fileLenght", tabelModel->data(tabelModel->index(i,8)).toInt());
+                CallRecquery.bindValue(":callType", tabelModel->data(tabelModel->index(i,9)).toInt());
+                CallRecquery.bindValue(":comment", tabelModel->data(tabelModel->index(i,10)).toString());
+                CallRecquery.bindValue(":priority", tabelModel->data(tabelModel->index(i,11)).toInt());
+                CallRecquery.bindValue(":sim", tabelModel->data(tabelModel->index(i,14)).toString());
+                CallRecquery.bindValue(":modified",tabelModel->data(tabelModel->index(i,13)).toInt());
+                CallRecquery.bindValue(":created", tabelModel->data(tabelModel->index(i,12)).toInt());
+                CallRecquery.bindValue(":record_uuid", tabelModel->data(tabelModel->index(i,15)).toLongLong());
                 CallRecquery.exec();
             }
         }
     }
     emit signProgresBar(0);
-     //QMessageBox::information(NULL, "Сообщение", "Перенос в БД выполнен успешно!");
-
-     signProgresBarHidden(false);//скрывает progressBar
-    // ui->progressBar->setVisible(false);
+    emit sendMessage("Перенос в БД выполнен успешно!");
 }
