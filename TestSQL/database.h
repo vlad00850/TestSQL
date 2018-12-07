@@ -18,6 +18,8 @@ public:
     QSqlDatabase db;
     QSqlQueryModel SqlWrite;
     QAbstractItemModel* abstractModel;
+    QStandardItemModel* contactsStandartModel;
+    QStandardItemModel* contactsStandartSomeModels, *recorderStandartSomeModels; //Для множенственного добавления в баз contacts и RecorderDB
 
     QAbstractItemModel*getAbstractModel() const;
 
@@ -35,6 +37,7 @@ public slots:
     QStringList horizontalHeaderMy();
     QAbstractItemModel* migrationMeizuBD(QAbstractItemModel* contactsModel, QAbstractItemModel* RecorderDbModel);
     void bdbd(QAbstractItemModel* tabelModel, QString nameBD);
+    void openSomeTables(QStandardItemModel* contacts, QStandardItemModel* record, QStringList vecPath);
 
 };
 

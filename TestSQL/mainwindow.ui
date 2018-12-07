@@ -500,6 +500,7 @@
     <addaction name="actionSMs"/>
     <addaction name="action_startNetwork"/>
     <addaction name="action_network_2"/>
+    <addaction name="action_migrationSomes"/>
    </widget>
    <addaction name="menuSMs"/>
   </widget>
@@ -517,6 +518,11 @@
   <action name="action_network_2">
    <property name="text">
     <string>Остановка network</string>
+   </property>
+  </action>
+  <action name="action_migrationSomes">
+   <property name="text">
+    <string>Множественная миграция</string>
    </property>
   </action>
  </widget>

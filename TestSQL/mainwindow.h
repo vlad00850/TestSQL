@@ -62,8 +62,8 @@ private slots:
     void FindRecord(QString textSort);//Сортировка
     void click_findOk();//при изменении текста, значение передается в фун-ию сортировки
     void bdbd(); //Перенос из модели в базу данных
-    void bdbdThread();
     void migrationMeizu(); //миграция базы данных contacts2 и RecorderDb в одну модель
+    void migrationMeizuSomes(); //множественная миграция
 
     void setMusicRange(qint64 time);//При воспроизведении передвигается ползунок
 
@@ -71,7 +71,8 @@ private slots:
 
   // QString dateCreate(QString time1); //метод получения и изменения времени
 
-    QStringList FileFinder(const QDir& dir);//Рекурсивная функция поиска файлов и запись в переменнную типа LIST
+    QStringList FileFinderAmrMp3(const QDir& dir);//Рекурсивная функция поиска аудиофайлов и запись в переменнную типа QStringList
+    QStringList FileFinderBd(const QDir& dir);//Рекурсивная функция поиска файлов базы данных и запись в переменнную типа QStringList
     void on_btn_add_clicked();//Выбор папки хранения аудиофайлов
     void inizilizeProgBar(int range);//Инициализация линии прогресса записи в БД
     void payPrint(QAbstractItemModel *modelTable);//Раскрашиваение элементов

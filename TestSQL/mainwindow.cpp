@@ -10,11 +10,13 @@
 #include "taglib/tag.h"
 #include <QFile>
 
+
 QString PATH = QDir::current().absolutePath() + "/CallRecProg.db"; //путь к главной БД
+
+//Добавить множественное добавление базы contacts и record
 
 //data/data/com.android.soundrecorder/databases/recorded.db
 //data/data/com.android.providers.contacts/databases/contacts2.db
-//в самом начале выбирать базу callRecProg.db для глобального и не записывать в модель а сразу преобразовывать
 //Все аудиозаписи которые не нашли контакт записать в таблицу
 //taglib.dll положить в папку с exe!
 
@@ -37,7 +39,7 @@ QString PATH = QDir::current().absolutePath() + "/CallRecProg.db"; //путь к
 
 //QStandardItemModel *model = new QStandardItemModel;
 
-QStandardItem *item;
+//QStandardItem *item;
 bool isClosed=false; // закрытие приложения
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -76,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,SIGNAL(signpayPrintEnd(QStandardItemModel*,int,int)),SLOT(payPrintEnd(QStandardItemModel*,int,int)));
     connect(ui->actionSMs,SIGNAL(triggered()), SLOT(smsCreate()));
     connect(ui->action_startNetwork,SIGNAL(triggered()), SLOT(startNetwork()));
+    connect(ui->action_migrationSomes, SIGNAL(triggered()), SLOT(migrationMeizuSomes()));
 
     ui->progressBar->setVisible(false);
     ui->progressBar->setAlignment(Qt::AlignCenter);
@@ -117,7 +120,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(audioPlay->m_playlist, SIGNAL(currentIndexChanged(int)),this, SLOT(currentTrackLabel(int)));//Для вывода в Label - currentTrack трека который воспроизводится
 
     connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), SLOT(getId(QModelIndex)));//Воспроизведение трека по двойному щелчку TableView
-    connect(ui->pushButton_2, SIGNAL(clicked()), SLOT(bdbdThread()));//Перенос из model в БД
+    connect(ui->pushButton_2, SIGNAL(clicked()), SLOT(bdbd()));//Перенос из model в БД
 
     connect(this,SIGNAL(signProgresBarHidden(bool)),ui->progressBar, SLOT(setVisible(bool)));//Скрывает progressBar после переноса в БД
 
@@ -128,14 +131,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, SIGNAL(signError(QString)), SLOT(slotError(QString))); //Для вывода ошибки
     connect(myDataBase, SIGNAL(sendMessage(QString)), SLOT(slotMessage(QString))); //Для вывода ошибки
 
-//    //*************************************************
-//    //для записи в бд
-//    QSqlRecord record = SqlTabMod->record(1);
-//    QString text = record.value(1).toString();
-//    QString text2 = record.value(2).toString();
-//    qDebug() << text;
-//    qDebug() << text2;
-//    //*************************************************
+
+
 
 }
 
@@ -234,7 +231,7 @@ void MainWindow::migrationMeizu()
     ui->tableView->resizeColumnsToContents();
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
     //ui->tableView->setColumnWidth(2,400); // одну колонку увеличить в размерах 2-колонка
-    ui->tableView->setColumnHidden(0,true);
+   // ui->tableView->setColumnHidden(0,true);
     ui->statusBar->showMessage(QString("Кол-во записей :%1").arg(resultModel->rowCount()), 0);
 
     QMessageBox ms;
@@ -253,6 +250,42 @@ void MainWindow::migrationMeizu()
     ui->progressBar->reset();
 }
 
+//***************миграция базы данных contacts2 и RecorderDb в одну модель с множественным выбором баз************//
+//Добавить в поток ресурсозатратные действия
+void MainWindow::migrationMeizuSomes()
+{
+    QAbstractItemModel *resultModel;
+    QStringList vecPath;
+    QString files1 = QFileDialog::getExistingDirectory(this, "Open files", QString()); //выбираем папку с файлами
+    vecPath = FileFinderBd(QDir(files1));
+    qDebug() << vecPath;
+    QStandardItemModel *contacts = new QStandardItemModel();
+    QStandardItemModel *record = new QStandardItemModel();
+
+    myDataBase->openSomeTables(contacts,record, vecPath); //в поток отправить
+    resultModel = myDataBase->migrationMeizuBD(contacts,record); // Создаем модель общую из contacts2 и RecorderDb
+
+    ui->tableView->setModel(resultModel);
+    ui->tableView->resizeRowsToContents();
+    ui->tableView->resizeColumnsToContents();
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows); // режим выделения строк
+    //ui->tableView->setColumnWidth(2,400); // одну колонку увеличить в размерах 2-колонка
+    ui->statusBar->showMessage(QString("Кол-во записей :%1").arg(resultModel->rowCount()), 0);
+
+    QMessageBox ms;
+    QAbstractButton *yes= ms.addButton("Да", QMessageBox::YesRole);
+    QAbstractButton *no= ms.addButton("Нет", QMessageBox::NoRole);
+    ms.setText("Cразу записать в БД приложения (CallRecProg.db)?");
+    ms.exec();
+    if(ms.clickedButton()==yes)
+    {
+        ui->pushButton_2->setEnabled(false);
+        this->bdbd();
+    }
+    if(ms.clickedButton()==no)
+        ui->pushButton_2->setEnabled(true);
+}
+
 //Перенос из модели в базу данных
 void MainWindow::bdbd()
 {
@@ -265,7 +298,7 @@ void MainWindow::bdbd()
     QtConcurrent::run(myDataBase,&databaseMy::bdbd, tableModel, QDir(myDataBase->getDb().databaseName()).dirName());
 
     emit signProgresBar(0);
-     signProgresBarHidden(false);//скрывает progressBar
+     //signProgresBarHidden(false);//скрывает progressBar
     // ui->progressBar->setVisible(false);
 }
 
@@ -311,8 +344,6 @@ void MainWindow::InOutCall()
     ui->statusBar->showMessage(QString("Кол-во записей :%1")
                                .arg( SqlWrite->rowCount()), 0 );
 }
-
-
 
 //***************Сортировка*************
 // Используем модель     QSqlQueryModel *SqlWrite;
@@ -407,7 +438,7 @@ void MainWindow::FindRecord(QString textSort)
 
 
 //**************Рекурсивная функция поиска файлов и запись в переменнную типа LIST*************//
-QStringList MainWindow::FileFinder(const QDir& dir)
+QStringList MainWindow::FileFinderAmrMp3(const QDir& dir)
 {
     QStringList filter("*.amr");
     filter.append("*.mp3");
@@ -425,7 +456,30 @@ QStringList MainWindow::FileFinder(const QDir& dir)
     {
         if (subdir == "." || subdir == "..")
             continue;
-        filesALL.append(FileFinder(QDir(dir.absoluteFilePath(subdir)))); //рекурсивный вызов функции
+        filesALL.append(FileFinderAmrMp3(QDir(dir.absoluteFilePath(subdir)))); //рекурсивный вызов функции
+    }
+    return filesALL;
+}
+
+QStringList MainWindow::FileFinderBd(const QDir&dir)
+{
+    QStringList filter("contacts2.db");
+    filter.append("RecorderDb.db");
+    QStringList filesALL;
+    QApplication::processEvents();
+    QStringList listFiles =  dir.entryList(QStringList(filter), QDir::Files);// список файлов в каталоге формата filter, параметр2= только файлы
+    foreach(QString file, listFiles)
+    {
+        filesALL.append(dir.absoluteFilePath(file));//путь до файла
+        //qDebug() <<QDir(file).dirName();// имя файла
+    }
+    //для поиска в папках
+    QStringList listDir = dir.entryList(QDir::Dirs);// всех подпапок
+    foreach (QString subdir, listDir)
+    {
+        if (subdir == "." || subdir == "..")
+            continue;
+        filesALL.append(FileFinderBd(QDir(dir.absoluteFilePath(subdir)))); //рекурсивный вызов функции
     }
     return filesALL;
 }
@@ -440,7 +494,7 @@ void MainWindow::on_btn_add_clicked()
     //добавить чтение файлов из зашифрованого архива
     //QString files1 = QFileDialog::getOpenFileName(this, "Open files", QString(), "Audio Files (*.amr)"); //выбор файлов из папки
     QString files1 = QFileDialog::getExistingDirectory(this, "Open files", QString()); //выбираем папку с файлами
-    foreach (QString filePath, FileFinder(QDir(files1)))
+    foreach (QString filePath, FileFinderAmrMp3(QDir(files1)))
     {
         QList<QStandardItem *> items;
         if((QString(QDir(filePath).dirName()).indexOf(reg)==-1)&&
@@ -700,11 +754,6 @@ void MainWindow::smsCreate()
     // QMainWindow::hide();
     formsms->show(); // Запуск созданной формы
     //delete formsms;
-}
-
-void MainWindow::bdbdThread()
-{
-    //QtConcurrent::run(this,&MainWindow::bdbd);
 }
 
 QStringList MainWindow::horizontalHeaderMy() //Заголовок таблицы
